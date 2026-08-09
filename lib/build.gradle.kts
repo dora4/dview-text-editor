@@ -1,0 +1,46 @@
+plugins {
+    id("com.android.library")
+    id("kotlin-android")
+    id("maven-publish")
+}
+
+android {
+    namespace = "dora.widget.texteditor"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 21
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+kotlin {
+    // 安装了多jdk的情况下，编译时自动帮你选jvm，否则需要手动操作IDE
+    jvmToolchain(17)
+}
+
+dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.1")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            register("release", MavenPublication::class) {
+                from(components["release"])
+                groupId = "com.github.dora4"
+                artifactId = rootProject.project.name
+                version = "1.0"
+            }
+        }
+    }
+}
