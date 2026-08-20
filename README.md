@@ -1636,17 +1636,3 @@ editor.justificationMode
 ### 6. DTXT 不等同于 HTML
 
 DTXT 是 `DoraTextEditor` 自己定义的富文本格式，主要用于保存和恢复 `Spannable` 数据，不是 HTML、Markdown 或 RTF。
-
----
-
-# License
-
-`dview-text-editor` 是 Dora View 系列组件之一。
-
-项目：
-
-`dview-text-editor`
-
-控件：
-
-`DoraTextEditor`
