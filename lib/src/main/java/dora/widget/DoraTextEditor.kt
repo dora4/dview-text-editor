@@ -45,7 +45,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.nio.charset.StandardCharsets
-import kotlin.math.min
 
 /**
  * Dora 富文本编辑器。
@@ -391,18 +390,18 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             setHeading(3)
         }
-        addIconButton(
-            R.drawable.ic_dview_editor_type,
-            "正文"
-        ) {
-            setBodyText()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_paragraph,
-            "段落"
-        ) {
-            insertParagraphBreak()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_type,
+//            "正文"
+//        ) {
+//            setBodyText()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_paragraph,
+//            "段落"
+//        ) {
+//            insertParagraphBreak()
+//        }
         addDivider()
         /*
          * 对齐
@@ -431,12 +430,12 @@ class DoraTextEditor @JvmOverloads constructor(
                 Layout.Alignment.ALIGN_OPPOSITE
             )
         }
-        addIconButton(
-            R.drawable.ic_dview_editor_text_paragraph,
-            "两端对齐"
-        ) {
-            setJustify()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_text_paragraph,
+//            "两端对齐"
+//        ) {
+//            setJustify()
+//        }
         addDivider()
         /*
          * 缩进
@@ -481,36 +480,36 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             toggleOrderedList()
         }
-        addIconButton(
-            R.drawable.ic_dview_editor_123,
-            "数字列表"
-        ) {
-            toggleOrderedList()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_list_task,
-            "任务列表"
-        ) {
-            toggleTaskList()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_list_check,
-            "检查列表"
-        ) {
-            toggleCheckList()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_123,
+//            "数字列表"
+//        ) {
+//            toggleOrderedList()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_list_task,
+//            "任务列表"
+//        ) {
+//            toggleTaskList()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_list_check,
+//            "检查列表"
+//        ) {
+//            toggleCheckList()
+//        }
         addIconButton(
             R.drawable.ic_dview_editor_list_stars,
             "星标列表"
         ) {
             toggleStarList()
         }
-        addIconButton(
-            R.drawable.ic_dview_editor_list_nested,
-            "嵌套列表"
-        ) {
-            increaseIndent()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_list_nested,
+//            "嵌套列表"
+//        ) {
+//            increaseIndent()
+//        }
         addDivider()
         /*
          * 引用
@@ -519,20 +518,20 @@ class DoraTextEditor @JvmOverloads constructor(
             R.drawable.ic_dview_editor_quote,
             "引用"
         ) {
-            toggleQuote()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_blockquote_left,
-            "左引用"
-        ) {
             toggleBlockQuoteLeft()
         }
-        addIconButton(
-            R.drawable.ic_dview_editor_blockquote_right,
-            "右引用"
-        ) {
-            toggleBlockQuoteRight()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_blockquote_left,
+//            "左引用"
+//        ) {
+//            toggleBlockQuoteLeft()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_blockquote_right,
+//            "右引用"
+//        ) {
+//            toggleBlockQuoteRight()
+//        }
         addDivider()
         /*
          * 代码
@@ -541,26 +540,26 @@ class DoraTextEditor @JvmOverloads constructor(
             R.drawable.ic_dview_editor_code_slash,
             "代码"
         ) {
-            toggleCode()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_code_square,
-            "代码块"
-        ) {
             toggleCodeBlock()
         }
-        addIconButton(
-            R.drawable.ic_dview_editor_code_square_fill,
-            "代码块"
-        ) {
-            toggleCodeBlock()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_code,
-            "代码"
-        ) {
-            toggleCode()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_code_square,
+//            "代码块"
+//        ) {
+//            toggleCodeBlock()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_code_square_fill,
+//            "代码块"
+//        ) {
+//            toggleCodeBlock()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_code,
+//            "代码"
+//        ) {
+//            toggleCode()
+//        }
         addIconButton(
             R.drawable.ic_dview_editor_braces,
             "{}"
@@ -642,18 +641,18 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             showTextSizeMenu(it)
         }
-        addIconButton(
-            R.drawable.ic_dview_editor_spellcheck,
-            "拼写检查"
-        ) {
-            toggleSpellCheck()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_text_wrap,
-            "自动换行"
-        ) {
-            toggleWordWrap()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_spellcheck,
+//            "拼写检查"
+//        ) {
+//            toggleSpellCheck()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_text_wrap,
+//            "自动换行"
+//        ) {
+//            toggleWordWrap()
+//        }
         /*
          * 颜色
          */
@@ -663,16 +662,16 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             showColorMenu(it)
         }
-        addDivider()
+//        addDivider()
         /*
          * 清除格式
          */
-        addIconButton(
-            R.drawable.ic_dview_editor_vr,
-            "清除格式"
-        ) {
-            clearSelectionFormatting()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_vr,
+//            "清除格式"
+//        ) {
+//            clearSelectionFormatting()
+//        }
     }
 
     private fun addIconButton(
@@ -1707,12 +1706,10 @@ class DoraTextEditor @JvmOverloads constructor(
                 LayoutParams.MATCH_PARENT
             )
         )
+        val popupWidth = toolbarScrollView.width
         val popup = PopupWindow(
             scrollView,
-            min(
-                resources.displayMetrics.widthPixels,
-                dp(360)
-            ),
+            popupWidth,
             toolbarHeight,
             true
         ).apply {
@@ -1769,9 +1766,9 @@ class DoraTextEditor @JvmOverloads constructor(
             gravity = Gravity.CENTER_VERTICAL
             setPadding(
                 dp(6),
-                0,
+                dp(4),
                 dp(6),
-                0
+                dp(4)
             )
         }
         scrollView.addView(
@@ -1781,12 +1778,10 @@ class DoraTextEditor @JvmOverloads constructor(
                 LayoutParams.MATCH_PARENT
             )
         )
+        val popupWidth = toolbarScrollView.width
         val popup = PopupWindow(
             scrollView,
-            min(
-                resources.displayMetrics.widthPixels,
-                dp(360)
-            ),
+            popupWidth,
             toolbarHeight,
             true
         ).apply {
@@ -1803,11 +1798,11 @@ class DoraTextEditor @JvmOverloads constructor(
             container.addView(
                 view,
                 LayoutParams(
-                    dp(32),
-                    LayoutParams.MATCH_PARENT
+                    dp(28),
+                    dp(28)
                 ).apply {
-                    marginStart = dp(4)
-                    marginEnd = dp(4)
+                    marginStart = dp(5)
+                    marginEnd = dp(5)
                 }
             )
             view.setOnClickListener {
