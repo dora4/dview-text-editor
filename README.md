@@ -3,13 +3,6 @@
 [![Release](https://jitpack.io/v/dora4/dview-text-editor.svg)](https://jitpack.io/#dora4/dview-text-editor)
 
 `dview-text-editor` 是 Dora View 系列的 Android 富文本编辑器控件，基于 `Spannable` 实现，支持文本样式、标题、段落对齐、缩进、列表、引用、代码、上下标、颜色、字号、自动换行、拼写检查以及 DTXT 富文本文件保存与加载。
-
-控件类：
-
-```kotlin
-dora.widget.DoraTextEditor
-```
-
 ---
 
 ## Gradle 依赖配置
