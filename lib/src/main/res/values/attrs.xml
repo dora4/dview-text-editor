@@ -7,19 +7,21 @@
         <!-- Toolbar -->
         <attr name="dview_te_toolbarVisible" format="boolean" />
 
-        <attr name="dview_te_toolbarHeight" format="dimension" />
+        <attr name="dview_te_toolbarHeight" format="dimension|reference" />
+
+        <attr name="dview_te_toolbarColor" format="color|reference" />
 
         <!-- Editor -->
-        <attr name="dview_te_textColor" format="color" />
+        <attr name="dview_te_textColor" format="color|reference" />
 
-        <attr name="dview_te_hintColor" format="color" />
+        <attr name="dview_te_hintColor" format="color|reference" />
 
-        <attr name="dview_te_hint" format="string" />
+        <attr name="dview_te_hint" format="string|reference" />
 
-        <attr name="dview_te_textSize" format="dimension" />
+        <attr name="dview_te_textSize" format="dimension|reference" />
 
         <!-- Divider -->
-        <attr name="dview_te_dividerColor" format="color" />
+        <attr name="dview_te_dividerColor" format="color|reference" />
 
         <!-- Behavior -->
         <attr name="dview_te_spellCheck" format="boolean" />

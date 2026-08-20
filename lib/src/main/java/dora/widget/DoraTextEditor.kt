@@ -45,6 +45,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.nio.charset.StandardCharsets
+import kotlin.math.min
 
 /**
  * Dora 富文本编辑器。
@@ -113,6 +114,8 @@ class DoraTextEditor @JvmOverloads constructor(
 
         private const val DEFAULT_HINT_COLOR = 0xFF999999.toInt()
 
+        private const val DEFAULT_TOOLBAR_COLOR = 0xFFF5F5F5.toInt()
+
         private const val DEFAULT_DIVIDER_COLOR = 0xFFE5E5E5.toInt()
 
         private const val DEFAULT_CODE_BACKGROUND = 0xFFF5F5F5.toInt()
@@ -126,7 +129,11 @@ class DoraTextEditor @JvmOverloads constructor(
 
     private val toolbarScrollView = HorizontalScrollView(context)
 
+    private val toolbarContainer = LinearLayout(context)
+
     private val toolbar = LinearLayout(context)
+
+    private val toolbarDivider = View(context)
 
     private val editor = AppCompatEditText(context)
 
@@ -149,6 +156,9 @@ class DoraTextEditor @JvmOverloads constructor(
 
     @ColorInt
     private var toolbarTextColor = DEFAULT_TEXT_COLOR
+
+    @ColorInt
+    private var toolbarColor = DEFAULT_TOOLBAR_COLOR
 
     @ColorInt
     private var dividerColor = DEFAULT_DIVIDER_COLOR
@@ -198,13 +208,30 @@ class DoraTextEditor @JvmOverloads constructor(
     init {
         orientation = VERTICAL
         initAttributes(attrs)
+        toolbarContainer.orientation = VERTICAL
+        toolbarContainer.setBackgroundColor(toolbarColor)
         setupToolbar()
         setupEditor()
-        addView(
+        toolbarContainer.addView(
             toolbarScrollView,
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 toolbarHeight
+            )
+        )
+        toolbarDivider.setBackgroundColor(dividerColor)
+        toolbarContainer.addView(
+            toolbarDivider,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                dp(1)
+            )
+        )
+        addView(
+            toolbarContainer,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT
             )
         )
         addView(
@@ -215,7 +242,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 1f
             )
         )
-        toolbarScrollView.visibility =
+        toolbarContainer.visibility =
             if (toolbarVisible) {
                 VISIBLE
             } else {
@@ -248,6 +275,11 @@ class DoraTextEditor @JvmOverloads constructor(
                 typedArray.getDimensionPixelSize(
                     R.styleable.DoraTextEditor_dview_te_toolbarHeight,
                     dp(DEFAULT_TOOLBAR_HEIGHT)
+                )
+            toolbarColor =
+                typedArray.getColor(
+                    R.styleable.DoraTextEditor_dview_te_toolbarColor,
+                    DEFAULT_TOOLBAR_COLOR
                 )
             editorTextColor =
                 typedArray.getColor(
@@ -301,6 +333,7 @@ class DoraTextEditor @JvmOverloads constructor(
     private fun setupToolbar() {
         toolbar.orientation = HORIZONTAL
         toolbar.gravity = Gravity.CENTER_VERTICAL
+        toolbar.setBackgroundColor(toolbarColor)
         toolbarScrollView.isHorizontalScrollBarEnabled = false
         toolbarScrollView.addView(
             toolbar,
@@ -408,18 +441,18 @@ class DoraTextEditor @JvmOverloads constructor(
         /*
          * 缩进
          */
-        addIconButton(
-            R.drawable.ic_dview_editor_indent,
-            "增加缩进"
-        ) {
-            increaseIndent()
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_unindent,
-            "减少缩进"
-        ) {
-            decreaseIndent()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_indent,
+//            "增加缩进"
+//        ) {
+//            increaseIndent()
+//        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_unindent,
+//            "减少缩进"
+//        ) {
+//            decreaseIndent()
+//        }
         addIconButton(
             R.drawable.ic_dview_editor_text_indent_left,
             "左缩进"
@@ -625,7 +658,7 @@ class DoraTextEditor @JvmOverloads constructor(
          * 颜色
          */
         addIconButton(
-            R.drawable.ic_dview_editor_body_text,
+            R.drawable.ic_dview_editor_palette,
             "文字颜色"
         ) {
             showColorMenu(it)
@@ -708,8 +741,7 @@ class DoraTextEditor @JvmOverloads constructor(
         editor.inputType = createInputType()
         editor.setHorizontallyScrolling(!wordWrapEnabled)
         applyJustifyMode()
-        editor.setOnFocusChangeListener { _,
-                                          hasFocus ->
+        editor.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 updateCurrentStyleFromSelection()
             }
@@ -733,9 +765,7 @@ class DoraTextEditor @JvmOverloads constructor(
     fun toggleBold() {
         val range = getSelectionRange()
             ?: run {
-                currentBold =
-                    !currentBold
-
+                currentBold = !currentBold
                 return
             }
         val editable = editor.text
@@ -1650,48 +1680,77 @@ class DoraTextEditor @JvmOverloads constructor(
     // ============================================================
     // Popup
     // ============================================================
-
     private fun showTextPopup(
         anchor: View,
         values: List<String>,
         callback: (String) -> Unit
     ) {
-        val container = LinearLayout(context)
-        container.orientation = HORIZONTAL
-        container.setPadding(
-            dp(6),
-            dp(6),
-            dp(6),
-            dp(6)
+        val scrollView = HorizontalScrollView(context).apply {
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = OVER_SCROLL_NEVER
+            setBackgroundColor(Color.WHITE)
+        }
+        val container = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(
+                dp(6),
+                0,
+                dp(6),
+                0
+            )
+        }
+        scrollView.addView(
+            container,
+            FrameLayout.LayoutParams(
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.MATCH_PARENT
+            )
         )
+        val popup = PopupWindow(
+            scrollView,
+            min(
+                resources.displayMetrics.widthPixels,
+                dp(360)
+            ),
+            toolbarHeight,
+            true
+        ).apply {
+            setBackgroundDrawable(Color.WHITE.toDrawable())
+            elevation = dp(6).toFloat()
+            isOutsideTouchable = true
+            isFocusable = true
+        }
         values.forEach { value ->
-            val item = TextView(context)
-            item.text = value
-            item.textSize = 14f
-            item.gravity = Gravity.CENTER
-            item.setPadding(
-                dp(10),
-                dp(8),
-                dp(10),
-                dp(8)
+            val item = TextView(context).apply {
+                text = value
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setTextColor(toolbarTextColor)
+                includeFontPadding = false
+                setPadding(
+                    dp(12),
+                    0,
+                    dp(12),
+                    0
+                )
+            }
+            container.addView(
+                item,
+                LayoutParams(
+                    LayoutParams.WRAP_CONTENT,
+                    LayoutParams.MATCH_PARENT
+                )
             )
             item.setOnClickListener {
                 callback(value)
+                popup.dismiss()
             }
-            container.addView(item)
         }
-        val popup = PopupWindow(
-            container,
-            LayoutParams.WRAP_CONTENT,
-            LayoutParams.WRAP_CONTENT,
-            true
-        )
-        popup.setBackgroundDrawable(Color.WHITE.toDrawable())
-        popup.elevation = dp(6).toFloat()
         popup.showAsDropDown(
             anchor,
             0,
-            -dp(48)
+            -toolbarHeight
         )
     }
 
@@ -1700,44 +1759,66 @@ class DoraTextEditor @JvmOverloads constructor(
         items: List<ColorMenuItem>,
         callback: (ColorMenuItem) -> Unit
     ) {
-        val container = LinearLayout(context)
-        container.orientation = HORIZONTAL
-        container.setPadding(
-            dp(6),
-            dp(6),
-            dp(6),
-            dp(6)
+        val scrollView = HorizontalScrollView(context).apply {
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = OVER_SCROLL_NEVER
+            setBackgroundColor(Color.WHITE)
+        }
+        val container = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(
+                dp(6),
+                0,
+                dp(6),
+                0
+            )
+        }
+        scrollView.addView(
+            container,
+            FrameLayout.LayoutParams(
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.MATCH_PARENT
+            )
         )
+        val popup = PopupWindow(
+            scrollView,
+            min(
+                resources.displayMetrics.widthPixels,
+                dp(360)
+            ),
+            toolbarHeight,
+            true
+        ).apply {
+            setBackgroundDrawable(Color.WHITE.toDrawable())
+            elevation = dp(6).toFloat()
+            isOutsideTouchable = true
+            isFocusable = true
+        }
         items.forEach { item ->
-            val view = View(context)
-            view.setBackgroundColor(item.color)
-            item.view = view
-            view.setOnClickListener {
-                callback(item)
+            val view = View(context).apply {
+                setBackgroundColor(item.color)
             }
+            item.view = view
             container.addView(
                 view,
                 LayoutParams(
-                    dp(28),
-                    dp(28)
+                    dp(32),
+                    LayoutParams.MATCH_PARENT
                 ).apply {
-                    marginStart = dp(3)
-                    marginEnd = dp(3)
+                    marginStart = dp(4)
+                    marginEnd = dp(4)
                 }
             )
+            view.setOnClickListener {
+                callback(item)
+                popup.dismiss()
+            }
         }
-        val popup = PopupWindow(
-            container,
-            LayoutParams.WRAP_CONTENT,
-            LayoutParams.WRAP_CONTENT,
-            true
-        )
-        popup.setBackgroundDrawable(Color.WHITE.toDrawable())
-        popup.elevation = dp(6).toFloat()
         popup.showAsDropDown(
             anchor,
             0,
-            -dp(48)
+            -toolbarHeight
         )
     }
 
@@ -2132,7 +2213,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 spans
             )
         }
-
         editable.getSpans(
             0,
             editable.length,
@@ -2585,6 +2665,18 @@ class DoraTextEditor @JvmOverloads constructor(
         }
     }
 
+    fun setToolbarColor(@ColorInt color: Int) {
+        toolbarColor = color
+        toolbarContainer.setBackgroundColor(color)
+        toolbarScrollView.setBackgroundColor(color)
+        toolbar.setBackgroundColor(color)
+    }
+
+    @ColorInt
+    fun getToolbarColor(): Int {
+        return toolbarColor
+    }
+
     fun setToolbarVisible(visible: Boolean) {
         toolbarVisible = visible
         toolbarScrollView.visibility =
@@ -2608,6 +2700,16 @@ class DoraTextEditor @JvmOverloads constructor(
 
     fun getToolbarHeight(): Int {
         return (toolbarHeight / resources.displayMetrics.density).toInt()
+    }
+
+    fun setDividerColor(@ColorInt color: Int) {
+        dividerColor = color
+        toolbarDivider.setBackgroundColor(color)
+    }
+
+    @ColorInt
+    fun getDividerColor(): Int {
+        return dividerColor
     }
 
     fun getEditText(): EditText {
@@ -2881,12 +2983,19 @@ class DoraTextEditor @JvmOverloads constructor(
         }
     }
 
-    private class BlockQuoteSpan(val right: Boolean) : LeadingMarginSpan {
+    private class BlockQuoteSpan(
+        val right: Boolean
+    ) : LeadingMarginSpan, android.text.style.LineBackgroundSpan {
 
         override fun getLeadingMargin(
             first: Boolean
         ): Int {
-            return 20
+            // 只有左引用需要给正文预留左边距
+            return if (right) {
+                0
+            } else {
+                20
+            }
         }
 
         override fun drawLeadingMargin(
@@ -2903,20 +3012,43 @@ class DoraTextEditor @JvmOverloads constructor(
             first: Boolean,
             layout: Layout
         ) {
-            if (!first) {
+            if (right) {
                 return
             }
             val oldColor = p.color
             p.color = DEFAULT_QUOTE_COLOR
-            val lineX = if (right) {
-                x + layout.width - 8f
-            } else {
-                x.toFloat()
-            }
             c.drawRect(
-                lineX,
+                x.toFloat(),
                 top.toFloat(),
-                lineX + 6f,
+                x + 6f,
+                bottom.toFloat(),
+                p
+            )
+            p.color = oldColor
+        }
+
+        override fun drawBackground(
+            c: Canvas,
+            p: Paint,
+            left: Int,
+            rightEdge: Int,
+            top: Int,
+            baseline: Int,
+            bottom: Int,
+            text: CharSequence,
+            start: Int,
+            end: Int,
+            lineNumber: Int
+        ) {
+            if (!right) {
+                return
+            }
+            val oldColor = p.color
+            p.color = DEFAULT_QUOTE_COLOR
+            c.drawRect(
+                (rightEdge - 6).toFloat(),
+                top.toFloat(),
+                rightEdge.toFloat(),
                 bottom.toFloat(),
                 p
             )
