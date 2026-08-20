@@ -37,7 +37,7 @@ dependencyResolutionManagement {
 
 ```groovy
 dependencies {
-    implementation 'com.github.dora4:dview-text-editor:1.4'
+    implementation 'com.github.dora4:dview-text-editor:1.5'
 }
 ```
 

@@ -60,23 +60,16 @@ import java.nio.charset.StandardCharsets
  * - 字体颜色
  * - 字号
  * - H1 / H2 / H3
- * - 正文
- * - 左 / 中 / 右 / 两端对齐
+ * - 左 / 中 / 右 对齐
  * - 增加 / 减少缩进
  * - 无序列表
  * - 有序列表
- * - Task List
- * - Check List
  * - Star List
  * - Quote
  * - BlockQuote
- * - Code
- * - Code Block
  * - 上标
  * - 下标
  * - 水平线
- * - 自动换行
- * - 拼写检查
  * - DTXT 保存
  * - DTXT 加载
  *
@@ -341,6 +334,19 @@ class DoraTextEditor @JvmOverloads constructor(
                 LayoutParams.MATCH_PARENT
             )
         )
+        addIconButton(
+            R.drawable.ic_dview_editor_fonts,
+            "字体"
+        ) {
+            showTextSizeMenu(it)
+        }
+        addIconButton(
+            R.drawable.ic_dview_editor_palette,
+            "文字颜色"
+        ) {
+            showColorMenu(it)
+        }
+        addDivider()
         /*
          * 基础文字
          */
@@ -520,6 +526,15 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             toggleBlockQuoteLeft()
         }
+        /*
+         * 水平线
+         */
+        addIconButton(
+            R.drawable.ic_dview_editor_hr,
+            "水平线"
+        ) {
+            insertHorizontalRule()
+        }
 //        addIconButton(
 //            R.drawable.ic_dview_editor_blockquote_left,
 //            "左引用"
@@ -536,12 +551,12 @@ class DoraTextEditor @JvmOverloads constructor(
         /*
          * 代码
          */
-        addIconButton(
-            R.drawable.ic_dview_editor_code_slash,
-            "代码"
-        ) {
-            toggleCodeBlock()
-        }
+//        addIconButton(
+//            R.drawable.ic_dview_editor_code_slash,
+//            "代码"
+//        ) {
+//            toggleCodeBlock()
+//        }
 //        addIconButton(
 //            R.drawable.ic_dview_editor_code_square,
 //            "代码块"
@@ -560,19 +575,6 @@ class DoraTextEditor @JvmOverloads constructor(
 //        ) {
 //            toggleCode()
 //        }
-        addIconButton(
-            R.drawable.ic_dview_editor_braces,
-            "{}"
-        ) {
-            insertText("{}")
-        }
-        addIconButton(
-            R.drawable.ic_dview_editor_braces_asterisk,
-            "{*}"
-        ) {
-            insertText("{*}")
-        }
-        addDivider()
         /*
          * 上下标
          */
@@ -622,25 +624,19 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             insertText("±")
         }
-        addDivider()
-        /*
-         * 水平线
-         */
         addIconButton(
-            R.drawable.ic_dview_editor_hr,
-            "水平线"
+            R.drawable.ic_dview_editor_braces,
+            "{}"
         ) {
-            insertHorizontalRule()
+            insertText("{}")
         }
-        /*
-         * 工具
-         */
         addIconButton(
-            R.drawable.ic_dview_editor_fonts,
-            "字体"
+            R.drawable.ic_dview_editor_braces_asterisk,
+            "{*}"
         ) {
-            showTextSizeMenu(it)
+            insertText("{*}")
         }
+
 //        addIconButton(
 //            R.drawable.ic_dview_editor_spellcheck,
 //            "拼写检查"
@@ -653,15 +649,6 @@ class DoraTextEditor @JvmOverloads constructor(
 //        ) {
 //            toggleWordWrap()
 //        }
-        /*
-         * 颜色
-         */
-        addIconButton(
-            R.drawable.ic_dview_editor_palette,
-            "文字颜色"
-        ) {
-            showColorMenu(it)
-        }
 //        addDivider()
         /*
          * 清除格式
