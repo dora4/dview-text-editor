@@ -2,4 +2,32 @@
 
 <resources>
 
+    <declare-styleable name="DoraTextEditor">
+
+        <!-- Toolbar -->
+        <attr name="dview_te_toolbarVisible" format="boolean" />
+
+        <attr name="dview_te_toolbarHeight" format="dimension" />
+
+        <!-- Editor -->
+        <attr name="dview_te_textColor" format="color" />
+
+        <attr name="dview_te_hintColor" format="color" />
+
+        <attr name="dview_te_hint" format="string" />
+
+        <attr name="dview_te_textSize" format="dimension" />
+
+        <!-- Divider -->
+        <attr name="dview_te_dividerColor" format="color" />
+
+        <!-- Behavior -->
+        <attr name="dview_te_spellCheck" format="boolean" />
+
+        <attr name="dview_te_wordWrap" format="boolean" />
+
+        <attr name="dview_te_justify" format="boolean" />
+
+    </declare-styleable>
+
 </resources>
