@@ -374,21 +374,40 @@ class DoraTextEditor @JvmOverloads constructor(
         toolbarContainer.setBackgroundColor(toolbarColor)
         setupToolbar()
         setupEditor()
-        toolbarContainer.addView(
-            toolbarScrollView,
-            LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                toolbarHeight
-            )
-        )
         toolbarDivider.setBackgroundColor(dividerColor)
-        toolbarContainer.addView(
-            toolbarDivider,
-            LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                dp(1)
+        if (toolbarPosition == TOOLBAR_POSITION_BOTTOM) {
+            // 底部 Toolbar：分割线在 Toolbar 上方
+            toolbarContainer.addView(
+                toolbarDivider,
+                LayoutParams(
+                    LayoutParams.MATCH_PARENT,
+                    dp(1)
+                )
             )
-        )
+            toolbarContainer.addView(
+                toolbarScrollView,
+                LayoutParams(
+                    LayoutParams.MATCH_PARENT,
+                    toolbarHeight
+                )
+            )
+        } else {
+            // 顶部 Toolbar：分割线在 Toolbar 下方
+            toolbarContainer.addView(
+                toolbarScrollView,
+                LayoutParams(
+                    LayoutParams.MATCH_PARENT,
+                    toolbarHeight
+                )
+            )
+            toolbarContainer.addView(
+                toolbarDivider,
+                LayoutParams(
+                    LayoutParams.MATCH_PARENT,
+                    dp(1)
+                )
+            )
+        }
         val toolbarParams =
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
