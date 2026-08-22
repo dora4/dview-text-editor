@@ -466,45 +466,6 @@ class DoraTextEditor @JvmOverloads constructor(
             }
     }
 
-    override fun onMeasure(
-        widthMeasureSpec: Int,
-        heightMeasureSpec: Int
-    ) {
-        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
-        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
-        when (heightMode) {
-            MeasureSpec.EXACTLY -> {
-                // 父布局要求的高度优先级最高
-                setMeasuredDimension(
-                    MeasureSpec.getSize(widthMeasureSpec),
-                    heightSize
-                )
-            }
-            MeasureSpec.AT_MOST -> {
-                val desiredHeight = if (editorHeight > 0) {
-                    editorHeight
-                } else {
-                    suggestedMinimumHeight
-                }
-                setMeasuredDimension(
-                    MeasureSpec.getSize(widthMeasureSpec),
-                    desiredHeight.coerceAtMost(heightSize)
-                )
-            }
-            MeasureSpec.UNSPECIFIED -> {
-                val desiredHeight = if (editorHeight > 0) {
-                    editorHeight
-                } else {
-                    suggestedMinimumHeight
-                }
-                setMeasuredDimension(
-                    MeasureSpec.getSize(widthMeasureSpec),
-                    desiredHeight
-                )
-            }
-        }
-    }
-
     // ============================================================
     // Attributes
     // ============================================================
