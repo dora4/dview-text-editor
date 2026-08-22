@@ -18,6 +18,7 @@ import android.text.InputType
 import android.text.Layout
 import android.text.Spanned
 import android.text.SpannableStringBuilder
+import android.text.TextWatcher
 import android.text.style.AbsoluteSizeSpan
 import android.text.style.AlignmentSpan
 import android.text.style.BackgroundColorSpan
@@ -35,6 +36,7 @@ import android.text.style.UnderlineSpan
 import android.util.AttributeSet
 import android.util.Base64
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -934,11 +936,14 @@ class DoraTextEditor @JvmOverloads constructor(
          */
         editor.setOnKeyListener { _, keyCode, event ->
             if (
-                keyCode ==
-                android.view.KeyEvent.KEYCODE_DEL &&
-                event.action ==
-                android.view.KeyEvent.ACTION_DOWN
+                keyCode == KeyEvent.KEYCODE_ENTER &&
+                event.action == KeyEvent.ACTION_DOWN
             ) {
+                if (handleOrderedListEnter()) {
+                    return@setOnKeyListener true
+                }
+            }
+            if (keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_DOWN) {
                 val position = editor.selectionStart
                 if (position > 0) {
                     val editable = editor.text
@@ -978,6 +983,244 @@ class DoraTextEditor @JvmOverloads constructor(
             type = type or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
         }
         return type
+    }
+
+    private fun handleOrderedListEnter(): Boolean {
+        val start = editor.selectionStart
+        val end = editor.selectionEnd
+        if (
+            start < 0 ||
+            end < 0 ||
+            start != end
+        ) {
+            return false
+        }
+        val editable = editor.text ?: return false
+        val paragraphRange = getCurrentParagraphRange() ?: return false
+        val paragraphStart = paragraphRange.first
+        val paragraphEnd = paragraphRange.second
+        val listSpan = editable
+            .getSpans(
+                paragraphStart,
+                paragraphEnd,
+                OrderedListSpan::class.java
+            )
+            .firstOrNull()
+            ?: return false
+        val currentNumber = listSpan.number
+        /*
+         * 当前段落为空：
+         *
+         * 1.
+         * |
+         *
+         * 再按一次 Enter：
+         *
+         * 1.
+         *
+         * |
+         *
+         * 退出有序列表。
+         */
+        if (paragraphStart == paragraphEnd) {
+            editable.removeSpan(listSpan)
+            return true
+        }
+        /*
+         * 当前段落：
+         *
+         * 1. Hello|
+         *
+         * 按 Enter 后：
+         *
+         * 1. Hello
+         * 2. |
+         */
+        // 先删除当前列表 Span。
+        editable.removeSpan(listSpan)
+        // 在当前光标位置插入换行。
+        editable.insert(
+            start,
+            "\n"
+        )
+        val newParagraphStart = start + 1
+        /*
+         * 新列表项先创建一个零长度 Span。
+         *
+         * 使用 INCLUSIVE_INCLUSIVE，
+         * 这样用户输入第一个字符后，
+         * Span 会自动扩展。
+         */
+        editable.setSpan(
+            OrderedListSpan(
+                currentNumber + 1
+            ),
+            newParagraphStart,
+            newParagraphStart,
+            Spanned.SPAN_INCLUSIVE_INCLUSIVE
+        )
+        /*
+         * 当前项恢复。
+         *
+         * start 之前仍然属于原来的列表项。
+         */
+        if (paragraphStart < start) {
+            editable.setSpan(
+                OrderedListSpan(
+                    currentNumber
+                ),
+                paragraphStart,
+                start,
+                Spanned.SPAN_INCLUSIVE_EXCLUSIVE
+            )
+        }
+        /*
+         * 后面的列表项全部重新编号。
+         */
+        renumberOrderedListFrom(
+            editable,
+            newParagraphStart
+        )
+        editor.setSelection(newParagraphStart)
+        return true
+    }
+
+    private fun renumberOrderedListFrom(
+        editable: Editable,
+        position: Int
+    ) {
+        val spans = editable
+            .getSpans(
+                position,
+                editable.length,
+                OrderedListSpan::class.java
+            )
+            .sortedBy {
+                editable.getSpanStart(it)
+            }
+        if (spans.isEmpty()) {
+            return
+        }
+        var number = 2
+        spans.forEach { span ->
+            val start = editable.getSpanStart(span)
+            val end = editable.getSpanEnd(span)
+            if (start < 0 || end < 0) {
+                return@forEach
+            }
+            span.number = number
+            number++
+        }
+        editor.invalidate()
+    }
+
+    private fun renumberOrderedLists() {
+        val editable = editor.text ?: return
+        val spans =
+            editable.getSpans(
+                0,
+                editable.length,
+                OrderedListSpan::class.java
+            )
+                .sortedBy {
+                    editable.getSpanStart(it)
+                }
+        if (spans.isEmpty()) {
+            return
+        }
+        var number = 1
+        var previousEnd = -1
+        spans.forEach { span ->
+            val start = editable.getSpanStart(span)
+            val end = editable.getSpanEnd(span)
+            if (
+                start < 0 ||
+                end < 0
+            ) {
+                return@forEach
+            }
+            /*
+             * 第一个列表项。
+             */
+            if (previousEnd < 0) {
+                number = 1
+            } else {
+                /*
+                 * 如果两个列表项之间存在空行，
+                 * 则认为是新的列表。
+                 */
+                val gapStart = previousEnd
+                val gapEnd = start
+                var newList = false
+                if (gapStart < gapEnd) {
+                    val gap =
+                        editable.subSequence(
+                            gapStart,
+                            gapEnd
+                        )
+                    if (gap.contains("\n\n")) {
+                        newList = true
+                    }
+                }
+                if (newList) {
+                    number = 1
+                }
+            }
+            span.number = number
+            number++
+            previousEnd = end
+        }
+        editor.invalidate()
+    }
+
+    private fun getOrderedListSpanAt(
+        editable: Editable,
+        position: Int
+    ): OrderedListSpan? {
+        val safePosition = position.coerceIn(
+            0,
+            editable.length
+        )
+        return editable.getSpans(
+            safePosition,
+            safePosition,
+            OrderedListSpan::class.java
+        ).firstOrNull()
+    }
+
+    fun setOnTextChangedListener(
+        listener: (String) -> Unit
+    ) {
+        editor.addTextChangedListener(object : TextWatcher {
+
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) = Unit
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
+                listener(s?.toString().orEmpty())
+            }
+
+            override fun afterTextChanged(
+                s: Editable?
+            ) {
+                if (s == null) {
+                    return
+                }
+                if (suppressTextWatcher) {
+                    return
+                }
+                renumberOrderedLists()
+            }
+        })
     }
 
     // ============================================================
@@ -1635,14 +1878,39 @@ class DoraTextEditor @JvmOverloads constructor(
             existing.forEach {
                 editable.removeSpan(it)
             }
+            renumberOrderedLists()
             return
         }
+        val previousNumber =
+            findPreviousOrderedListNumber(
+                editable,
+                range.first
+            )
         editable.setSpan(
-            OrderedListSpan(1),
+            OrderedListSpan(
+                previousNumber + 1
+            ),
             range.first,
             range.second,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_INCLUSIVE_INCLUSIVE
         )
+        renumberOrderedLists()
+    }
+
+    private fun findPreviousOrderedListNumber(
+        editable: Editable,
+        position: Int
+    ): Int {
+        val spans =
+            editable.getSpans(
+                0,
+                position,
+                OrderedListSpan::class.java
+            )
+                .sortedBy {
+                    editable.getSpanStart(it)
+                }
+        return spans.lastOrNull()?.number ?: 0
     }
 
     // ============================================================
@@ -3911,21 +4179,15 @@ class DoraTextEditor @JvmOverloads constructor(
      * @property number 当前列表编号。
      */
     private class OrderedListSpan(
-        val number: Int
+        var number: Int
     ) : LeadingMarginSpan {
 
-        /**
-         * 列表左侧预留空间。
-         */
         override fun getLeadingMargin(
             first: Boolean
         ): Int {
             return 50
         }
 
-        /**
-         * 绘制列表编号。
-         */
         override fun drawLeadingMargin(
             c: Canvas,
             p: Paint,
