@@ -37,7 +37,7 @@ dependencyResolutionManagement {
 
 ```groovy
 dependencies {
-    implementation 'com.github.dora4:dview-text-editor:1.8'
+    implementation 'com.github.dora4:dview-text-editor:1.9'
 }
 ```
 
@@ -51,7 +51,17 @@ dependencies {
 <dora.widget.DoraTextEditor
     android:id="@+id/textEditor"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+    android:layout_height="match_parent"
+    app:dview_te_toolbarVisible="true"
+    app:dview_te_toolbarHeight="48dp"
+    app:dview_te_textColor="#333333"
+    app:dview_te_hintColor="#999999"
+    app:dview_te_hint="请输入文章内容"
+    app:dview_te_textSize="16sp"
+    app:dview_te_dividerColor="#E5E5E5"
+    app:dview_te_spellCheck="true"
+    app:dview_te_wordWrap="true"
+    app:dview_te_justify="false" />
 ```
 
 ### Kotlin
@@ -255,29 +265,6 @@ false
 ```
 
 两端对齐使用 Android 8.0（API 26）及以上提供的 `justificationMode`。
-
----
-
-## 完整 XML 示例
-
-```xml
-<dora.widget.DoraTextEditor
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/textEditor"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    app:dview_te_toolbarVisible="true"
-    app:dview_te_toolbarHeight="48dp"
-    app:dview_te_textColor="#333333"
-    app:dview_te_hintColor="#999999"
-    app:dview_te_hint="请输入文章内容"
-    app:dview_te_textSize="16sp"
-    app:dview_te_dividerColor="#E5E5E5"
-    app:dview_te_spellCheck="true"
-    app:dview_te_wordWrap="true"
-    app:dview_te_justify="false" />
-```
 
 ---
 
