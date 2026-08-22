@@ -45,6 +45,7 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.annotation.ColorInt
+import androidx.annotation.IntDef
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.drawable.toDrawable
 import dora.widget.texteditor.R
@@ -72,24 +73,16 @@ import java.nio.charset.StandardCharsets
  * - 左对齐
  * - 居中
  * - 右对齐
- * - 两端对齐
  * - 增加缩进
  * - 减少缩进
  * - 无序列表
  * - 有序列表
- * - Task List
- * - Check List
  * - Star List
  * - Quote
- * - BlockQuote
- * - Code
- * - Code Block
  * - 上标
  * - 下标
  * - 水平线
  * - 图片
- * - 拼写检查
- * - 自动换行
  * - DTXT 保存
  * - DTXT 加载
  *
@@ -136,9 +129,6 @@ class DoraTextEditor @JvmOverloads constructor(
 
         /**
          * 当前 DTXT 数据版本。
-         *
-         * 修改 DTXT 数据结构时应增加版本号，
-         * 以便后续实现向后兼容。
          */
         private const val DTXT_VERSION = 1
 
@@ -181,6 +171,16 @@ class DoraTextEditor @JvmOverloads constructor(
          * Quote / BlockQuote 默认颜色。
          */
         private const val DEFAULT_QUOTE_COLOR = 0xFF888888.toInt()
+
+        /**
+         * 工具栏显示在顶部。
+         */
+        const val TOOLBAR_POSITION_TOP = 0
+
+        /**
+         * 工具栏显示在底部。
+         */
+        const val TOOLBAR_POSITION_BOTTOM = 1
     }
 
     // ============================================================
@@ -212,10 +212,15 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     private val toolbarDivider = View(context)
 
+    @IntDef(TOOLBAR_POSITION_TOP, TOOLBAR_POSITION_BOTTOM)
+    @Retention(AnnotationRetention.SOURCE)
+    annotation class ToolbarPosition
+
     /**
      * Toolbar显示在顶部还是底部，默认0-顶部。
      */
-    private var toolbarPosition = 0
+    @ToolbarPosition
+    private var toolbarPosition = TOOLBAR_POSITION_TOP
 
     /**
      * 实际执行文本编辑的 EditText。
@@ -364,16 +369,11 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     init {
         orientation = VERTICAL
-
         initAttributes(attrs)
-
         toolbarContainer.orientation = VERTICAL
-
         toolbarContainer.setBackgroundColor(toolbarColor)
-
         setupToolbar()
         setupEditor()
-
         toolbarContainer.addView(
             toolbarScrollView,
             LayoutParams(
@@ -381,9 +381,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 toolbarHeight
             )
         )
-
         toolbarDivider.setBackgroundColor(dividerColor)
-
         toolbarContainer.addView(
             toolbarDivider,
             LayoutParams(
@@ -391,26 +389,22 @@ class DoraTextEditor @JvmOverloads constructor(
                 dp(1)
             )
         )
-
         val toolbarParams =
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.WRAP_CONTENT
             )
-
         val editorParams =
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 0,
                 1f
             )
-
-        if (toolbarPosition == 1) {
+        if (toolbarPosition == TOOLBAR_POSITION_BOTTOM) {
             addView(
                 editor,
                 editorParams
             )
-
             addView(
                 toolbarContainer,
                 toolbarParams
@@ -420,13 +414,11 @@ class DoraTextEditor @JvmOverloads constructor(
                 toolbarContainer,
                 toolbarParams
             )
-
             addView(
                 editor,
                 editorParams
             )
         }
-
         toolbarContainer.visibility =
             if (toolbarVisible) {
                 VISIBLE
@@ -450,20 +442,18 @@ class DoraTextEditor @JvmOverloads constructor(
         if (attrs == null) {
             return
         }
-
         val typedArray =
             context.obtainStyledAttributes(
                 attrs,
                 R.styleable.DoraTextEditor
             )
-
         try {
             /**
              * 是否支持插入图片。
              */
             insertImageEnabled = typedArray.getBoolean(
                 R.styleable.DoraTextEditor_dview_te_insertImageEnabled,
-                true
+                false
             )
             /**
              * 是否显示 Toolbar。
@@ -473,7 +463,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_toolbarVisible,
                     true
                 )
-
             /**
              * Toolbar 高度。
              */
@@ -482,7 +471,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_toolbarHeight,
                     dp(DEFAULT_TOOLBAR_HEIGHT)
                 )
-
             /**
              * Toolbar 背景颜色。
              */
@@ -491,16 +479,14 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_toolbarColor,
                     DEFAULT_TOOLBAR_COLOR
                 )
-
             /**
              * Toolbar 位置。
              */
             toolbarPosition =
                 typedArray.getInt(
                     R.styleable.DoraTextEditor_dview_te_toolbarPosition,
-                    0
+                    TOOLBAR_POSITION_TOP
                 )
-
             /**
              * 编辑器文字颜色。
              */
@@ -509,7 +495,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_textColor,
                     DEFAULT_TEXT_COLOR
                 )
-
             /**
              * 编辑器 Hint 颜色。
              */
@@ -518,7 +503,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_hintColor,
                     DEFAULT_HINT_COLOR
                 )
-
             /**
              * 编辑器 Hint。
              */
@@ -526,7 +510,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 typedArray.getString(
                     R.styleable.DoraTextEditor_dview_te_hint
                 ) ?: "请输入内容"
-
             /**
              * XML 中的 textSize 使用 px 获取，
              * 因此需要转换回 sp 保存。
@@ -536,7 +519,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_textSize,
                     spToPx(DEFAULT_TEXT_SIZE)
                 ) / resources.displayMetrics.scaledDensity
-
             /**
              * Toolbar 分割线颜色。
              */
@@ -545,7 +527,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_dividerColor,
                     DEFAULT_DIVIDER_COLOR
                 )
-
             /**
              * 是否启用拼写检查。
              */
@@ -554,7 +535,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_spellCheck,
                     true
                 )
-
             /**
              * 是否自动换行。
              */
@@ -563,7 +543,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     R.styleable.DoraTextEditor_dview_te_wordWrap,
                     true
                 )
-
             /**
              * 是否两端对齐。
              */
@@ -594,9 +573,7 @@ class DoraTextEditor @JvmOverloads constructor(
         toolbar.orientation = HORIZONTAL
         toolbar.gravity = Gravity.CENTER_VERTICAL
         toolbar.setBackgroundColor(toolbarColor)
-
         toolbarScrollView.isHorizontalScrollBarEnabled = false
-
         toolbarScrollView.addView(
             toolbar,
             FrameLayout.LayoutParams(
@@ -605,68 +582,53 @@ class DoraTextEditor @JvmOverloads constructor(
             )
         )
 
-        // H1
+        // ========================================================
+        // 基础文字格式
+        // ========================================================
+
         addIconButton(
             R.drawable.ic_dview_editor_type_h1,
             "H1"
         ) {
             setHeading(1)
         }
-
-        // H2
         addIconButton(
             R.drawable.ic_dview_editor_type_h2,
             "H2"
         ) {
             setHeading(2)
         }
-
-        // H3
         addIconButton(
             R.drawable.ic_dview_editor_type_h3,
             "H3"
         ) {
             setHeading(3)
         }
-
         addDivider()
-
-        // ========================================================
-        // 基础文字格式
-        // ========================================================
-
-        // 粗体
         addIconButton(
             R.drawable.ic_dview_editor_type_bold,
             "粗体"
         ) {
             toggleBold()
         }
-
-        // 斜体
         addIconButton(
             R.drawable.ic_dview_editor_type_italic,
             "斜体"
         ) {
             toggleItalic()
         }
-
-        // 下划线
         addIconButton(
             R.drawable.ic_dview_editor_type_underline,
             "下划线"
         ) {
             toggleUnderline()
         }
-
-        // 删除线
         addIconButton(
             R.drawable.ic_dview_editor_type_strikethrough,
             "删除线"
         ) {
             toggleStrikeThrough()
         }
-
         addDivider()
 
         // ========================================================
@@ -680,21 +642,18 @@ class DoraTextEditor @JvmOverloads constructor(
                 showImagePicker()
             }
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_fonts,
             "字体"
         ) {
             showTextSizeMenu(it)
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_palette,
             "文字颜色"
         ) {
             showColorMenu(it)
         }
-
         addDivider()
 
         // ========================================================
@@ -709,7 +668,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 Layout.Alignment.ALIGN_NORMAL
             )
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_text_center,
             "居中"
@@ -718,7 +676,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 Layout.Alignment.ALIGN_CENTER
             )
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_text_right,
             "右对齐"
@@ -727,7 +684,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 Layout.Alignment.ALIGN_OPPOSITE
             )
         }
-
         addDivider()
 
         // ========================================================
@@ -740,14 +696,12 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             increaseIndent()
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_text_indent_right,
             "右缩进"
         ) {
             decreaseIndent()
         }
-
         addDivider()
 
         // ========================================================
@@ -760,21 +714,18 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             toggleUnorderedList()
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_list_ol,
             "有序列表"
         ) {
             toggleOrderedList()
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_list_stars,
             "星标列表"
         ) {
             toggleStarList()
         }
-
         addDivider()
 
         // ========================================================
@@ -798,7 +749,6 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             insertHorizontalRule()
         }
-
         addDivider()
 
         // ========================================================
@@ -811,14 +761,12 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             toggleSuperscript()
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_subscript,
             "下标"
         ) {
             toggleSubscript()
         }
-
         addDivider()
 
         // ========================================================
@@ -831,42 +779,36 @@ class DoraTextEditor @JvmOverloads constructor(
         ) {
             insertText("#")
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_percent,
             "%"
         ) {
             insertText("%")
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_infinity,
             "∞"
         ) {
             insertText("∞")
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_asterisk,
             "*"
         ) {
             insertText("*")
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_plus_slash_minus,
             "±"
         ) {
             insertText("±")
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_braces,
             "{}"
         ) {
             insertText("{}")
         }
-
         addIconButton(
             R.drawable.ic_dview_editor_braces_asterisk,
             "{*}"
@@ -888,30 +830,18 @@ class DoraTextEditor @JvmOverloads constructor(
         onClick: (View) -> Unit
     ) {
         val button = ImageButton(context)
-
         button.setImageResource(iconRes)
-
-        button.imageTintList =
-            ColorStateList.valueOf(toolbarTextColor)
-
+        button.imageTintList = ColorStateList.valueOf(toolbarTextColor)
         button.contentDescription = description
-
-        button.scaleType =
-            ImageView.ScaleType.CENTER
-
+        button.scaleType = ImageView.ScaleType.CENTER
         button.setPadding(
             dp(10),
             dp(10),
             dp(10),
             dp(10)
         )
-
-        button.setBackgroundColor(
-            Color.TRANSPARENT
-        )
-
+        button.setBackgroundColor(Color.TRANSPARENT)
         button.setOnClickListener(onClick)
-
         toolbar.addView(
             button,
             LayoutParams(
@@ -926,9 +856,7 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     private fun addDivider() {
         val divider = View(context)
-
         divider.setBackgroundColor(dividerColor)
-
         toolbar.addView(
             divider,
             LayoutParams(
@@ -948,9 +876,7 @@ class DoraTextEditor @JvmOverloads constructor(
      *
      * @param listener 图片按钮点击回调。
      */
-    fun setOnImageClickListener(
-        listener: (() -> Unit)?
-    ) {
+    fun setOnImageClickListener(listener: (() -> Unit)?) {
         onImageClickListener = listener
     }
 
@@ -963,43 +889,26 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     private fun setupEditor() {
         editor.setTextColor(editorTextColor)
-
         editor.setHintTextColor(editorHintColor)
-
         editor.textSize = editorTextSize
-
         editor.hint = hintText
-
-        editor.gravity =
-            Gravity.TOP or Gravity.START
-
+        editor.gravity = Gravity.TOP or Gravity.START
         editor.setPadding(
             dp(16),
             dp(12),
             dp(16),
             dp(16)
         )
-
-        editor.setBackgroundColor(
-            Color.TRANSPARENT
-        )
-
+        editor.setBackgroundColor(Color.TRANSPARENT)
         editor.isSingleLine = false
-
         editor.inputType = createInputType()
-
-        editor.setHorizontallyScrolling(
-            !wordWrapEnabled
-        )
-
+        editor.setHorizontallyScrolling(!wordWrapEnabled)
         applyJustifyMode()
-
         editor.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 updateCurrentStyleFromSelection()
             }
         }
-
         /**
          * 删除图片时，需要一次性删除 ImageSpan
          * 对应的占位字符，而不是只删除字符。
@@ -1012,37 +921,27 @@ class DoraTextEditor @JvmOverloads constructor(
                 android.view.KeyEvent.ACTION_DOWN
             ) {
                 val position = editor.selectionStart
-
                 if (position > 0) {
                     val editable = editor.text
-
                     val spans = editable?.getSpans(
                         position - 1,
                         position,
                         ImageSpan::class.java
                     )
-
                     if (!spans.isNullOrEmpty()) {
                         spans.forEach { span ->
-                            val start =
-                                editable.getSpanStart(span)
-
-                            val end =
-                                editable.getSpanEnd(span)
-
+                            val start = editable.getSpanStart(span)
+                            val end = editable.getSpanEnd(span)
                             editable.removeSpan(span)
-
                             editable.delete(
                                 start,
                                 end
                             )
                         }
-
                         return@setOnKeyListener true
                     }
                 }
             }
-
             false
         }
     }
@@ -1053,17 +952,12 @@ class DoraTextEditor @JvmOverloads constructor(
      * @return Android InputType。
      */
     private fun createInputType(): Int {
-        var type =
-            InputType.TYPE_CLASS_TEXT or
+        var type = InputType.TYPE_CLASS_TEXT or
                     InputType.TYPE_TEXT_FLAG_MULTI_LINE or
                     InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-
         if (spellCheckEnabled) {
-            type =
-                type or
-                        InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
+            type = type or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
         }
-
         return type
     }
 
@@ -1082,18 +976,13 @@ class DoraTextEditor @JvmOverloads constructor(
                 currentBold = !currentBold
                 return
             }
-
-        val editable = editor.text
-            ?: return
-
+        val editable = editor.text ?: return
         val spans = editable.getSpans(
             range.first,
             range.second,
             StyleSpan::class.java
         )
-
         var hasBold = false
-
         spans.forEach {
             if (
                 it.style == Typeface.BOLD ||
@@ -1102,7 +991,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 hasBold = true
             }
         }
-
         if (hasBold) {
             removeBold(
                 editable,
@@ -1135,19 +1023,15 @@ class DoraTextEditor @JvmOverloads constructor(
             end,
             StyleSpan::class.java
         )
-
         spans.forEach { span ->
             when (span.style) {
                 Typeface.BOLD -> {
                     editable.removeSpan(span)
                 }
-
                 Typeface.BOLD_ITALIC -> {
                     val s = editable.getSpanStart(span)
                     val e = editable.getSpanEnd(span)
-
                     editable.removeSpan(span)
-
                     editable.setSpan(
                         StyleSpan(Typeface.ITALIC),
                         maxOf(start, s),
@@ -1168,23 +1052,17 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     fun toggleItalic() {
         val range = getSelectionRange()
-
         if (range == null) {
             currentItalic = !currentItalic
             return
         }
-
-        val editable = editor.text
-            ?: return
-
+        val editable = editor.text ?: return
         val spans = editable.getSpans(
             range.first,
             range.second,
             StyleSpan::class.java
         )
-
         var hasItalic = false
-
         spans.forEach {
             if (
                 it.style == Typeface.ITALIC ||
@@ -1193,7 +1071,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 hasItalic = true
             }
         }
-
         if (hasItalic) {
             removeItalic(
                 editable,
@@ -1226,19 +1103,15 @@ class DoraTextEditor @JvmOverloads constructor(
             end,
             StyleSpan::class.java
         )
-
         spans.forEach { span ->
             when (span.style) {
                 Typeface.ITALIC -> {
                     editable.removeSpan(span)
                 }
-
                 Typeface.BOLD_ITALIC -> {
                     val s = editable.getSpanStart(span)
                     val e = editable.getSpanEnd(span)
-
                     editable.removeSpan(span)
-
                     editable.setSpan(
                         StyleSpan(Typeface.BOLD),
                         maxOf(start, s),
@@ -1258,18 +1131,13 @@ class DoraTextEditor @JvmOverloads constructor(
      * 切换当前选中文字的下划线。
      */
     fun toggleUnderline() {
-        val range = getSelectionRange()
-            ?: return
-
-        val editable = editor.text
-            ?: return
-
+        val range = getSelectionRange() ?: return
+        val editable = editor.text ?: return
         val spans = editable.getSpans(
             range.first,
             range.second,
             UnderlineSpan::class.java
         )
-
         if (spans.isNotEmpty()) {
             spans.forEach {
                 editable.removeSpan(it)
@@ -1292,18 +1160,13 @@ class DoraTextEditor @JvmOverloads constructor(
      * 切换当前选中文字的删除线。
      */
     fun toggleStrikeThrough() {
-        val range = getSelectionRange()
-            ?: return
-
-        val editable = editor.text
-            ?: return
-
+        val range = getSelectionRange() ?: return
+        val editable = editor.text ?: return
         val spans = editable.getSpans(
             range.first,
             range.second,
             StrikethroughSpan::class.java
         )
-
         if (spans.isNotEmpty()) {
             spans.forEach {
                 editable.removeSpan(it)
@@ -1329,16 +1192,12 @@ class DoraTextEditor @JvmOverloads constructor(
      *
      * @param color ARGB 颜色值。
      */
-    fun setSelectionTextColor(
-        @ColorInt color: Int
-    ) {
+    fun setSelectionTextColor(@ColorInt color: Int) {
         val range = getSelectionRange()
-
         if (range == null) {
             currentTextColor = color
             return
         }
-
         editor.text?.setSpan(
             ForegroundColorSpan(color),
             range.first,
@@ -1365,12 +1224,10 @@ class DoraTextEditor @JvmOverloads constructor(
                 0xFFFF9800.toInt(),
                 0xFFFFC107.toInt()
             )
-
         val views =
             colors.map {
                 ColorMenuItem(it)
             }
-
         showPopup(
             anchor,
             views
@@ -1404,16 +1261,12 @@ class DoraTextEditor @JvmOverloads constructor(
      *
      * @param size 字号，单位 sp。
      */
-    fun setSelectionTextSize(
-        size: Float
-    ) {
+    fun setSelectionTextSize(size: Float) {
         val range = getSelectionRange()
-
         if (range == null) {
             currentTextSize = size
             return
         }
-
         editor.text?.setSpan(
             AbsoluteSizeSpan(
                 size.toInt(),
@@ -1444,7 +1297,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 36f,
                 48f
             )
-
         showTextPopup(
             anchor,
             sizes.map {
@@ -1475,20 +1327,13 @@ class DoraTextEditor @JvmOverloads constructor(
      * @param level 标题级别，只支持 1、2、3。
      */
     fun setHeading(level: Int) {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         removeParagraphFormatting(
             editable,
             range.first,
             range.second
         )
-
         val size =
             when (level) {
                 1 -> 32
@@ -1496,7 +1341,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 3 -> 22
                 else -> 16
             }
-
         editable.setSpan(
             AbsoluteSizeSpan(
                 size,
@@ -1506,7 +1350,6 @@ class DoraTextEditor @JvmOverloads constructor(
             range.second,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
-
         editable.setSpan(
             StyleSpan(
                 Typeface.BOLD
@@ -1521,20 +1364,13 @@ class DoraTextEditor @JvmOverloads constructor(
      * 将当前段落恢复为正文。
      */
     fun setBodyText() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         removeParagraphFormatting(
             editable,
             range.first,
             range.second
         )
-
         editable.setSpan(
             AbsoluteSizeSpan(
                 DEFAULT_TEXT_SIZE.toInt(),
@@ -1570,7 +1406,6 @@ class DoraTextEditor @JvmOverloads constructor(
         ).forEach {
             editable.removeSpan(it)
         }
-
         editable.getSpans(
             start,
             end,
@@ -1592,14 +1427,8 @@ class DoraTextEditor @JvmOverloads constructor(
     fun setAlignment(
         alignment: Layout.Alignment
     ) {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         editable.getSpans(
             range.first,
             range.second,
@@ -1607,7 +1436,6 @@ class DoraTextEditor @JvmOverloads constructor(
         ).forEach {
             editable.removeSpan(it)
         }
-
         editable.setSpan(
             AlignmentSpan.Standard(
                 alignment
@@ -1674,29 +1502,18 @@ class DoraTextEditor @JvmOverloads constructor(
      * 每一级缩进默认为 24dp。
      */
     fun increaseIndent() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val old =
             editable.getSpans(
                 range.first,
                 range.second,
                 DoraIndentSpan::class.java
             )
-
-        val current =
-            old.firstOrNull()?.level
-                ?: 0
-
+        val current = old.firstOrNull()?.level ?: 0
         old.forEach {
             editable.removeSpan(it)
         }
-
         editable.setSpan(
             DoraIndentSpan(
                 current + 1,
@@ -1714,32 +1531,21 @@ class DoraTextEditor @JvmOverloads constructor(
      * 缩进等级最低为 0。
      */
     fun decreaseIndent() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val old =
             editable.getSpans(
                 range.first,
                 range.second,
                 DoraIndentSpan::class.java
             )
-
         if (old.isEmpty()) {
             return
         }
-
-        val current =
-            old.first().level
-
+        val current = old.first().level
         old.forEach {
             editable.removeSpan(it)
         }
-
         if (current > 1) {
             editable.setSpan(
                 DoraIndentSpan(
@@ -1763,28 +1569,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 使用 Android 原生 [BulletSpan] 绘制项目符号。
      */
     fun toggleUnorderedList() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 BulletSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             BulletSpan(
                 dp(8),
@@ -1806,28 +1604,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 默认从数字 1 开始。
      */
     fun toggleOrderedList() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 OrderedListSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             OrderedListSpan(1),
             range.first,
@@ -1846,28 +1636,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 默认创建未选中的任务项。
      */
     fun toggleTaskList() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 TaskListSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             TaskListSpan(false),
             range.first,
@@ -1882,28 +1664,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 默认创建未选中的 Check List。
      */
     fun toggleCheckList() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 CheckListSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             CheckListSpan(false),
             range.first,
@@ -1918,28 +1692,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 星标使用 `★` 字符绘制。
      */
     fun toggleStarList() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 StarListSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             StarListSpan(),
             range.first,
@@ -1958,28 +1724,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 普通引用使用左侧 `“` 符号。
      */
     fun toggleQuote() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 QuoteSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             QuoteSpan(),
             range.first,
@@ -1994,28 +1752,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 左侧引用会在段落左边绘制一条竖线。
      */
     fun toggleBlockQuoteLeft() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 BlockQuoteSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             BlockQuoteSpan(
                 right = false
@@ -2032,14 +1782,8 @@ class DoraTextEditor @JvmOverloads constructor(
      * @note 当前实现会直接覆盖当前段落已有的 BlockQuote。
      */
     fun toggleBlockQuoteRight() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         editable.getSpans(
             range.first,
             range.second,
@@ -2047,7 +1791,6 @@ class DoraTextEditor @JvmOverloads constructor(
         ).forEach {
             editable.removeSpan(it)
         }
-
         editable.setSpan(
             BlockQuoteSpan(
                 right = true
@@ -2066,28 +1809,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 切换行内代码格式。
      */
     fun toggleCode() {
-        val range =
-            getSelectionRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getSelectionRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 CodeSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             CodeSpan(),
             range.first,
@@ -2102,28 +1837,20 @@ class DoraTextEditor @JvmOverloads constructor(
      * 代码块作用于当前段落。
      */
     fun toggleCodeBlock() {
-        val range =
-            getCurrentParagraphRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getCurrentParagraphRange() ?: return
+        val editable = editor.text ?: return
         val existing =
             editable.getSpans(
                 range.first,
                 range.second,
                 CodeBlockSpan::class.java
             )
-
         if (existing.isNotEmpty()) {
             existing.forEach {
                 editable.removeSpan(it)
             }
             return
         }
-
         editable.setSpan(
             CodeBlockSpan(),
             range.first,
@@ -2140,21 +1867,14 @@ class DoraTextEditor @JvmOverloads constructor(
      * 切换上标。
      */
     fun toggleSuperscript() {
-        val range =
-            getSelectionRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getSelectionRange() ?: return
+        val editable = editor.text ?: return
         val spans =
             editable.getSpans(
                 range.first,
                 range.second,
                 SuperscriptSpan::class.java
             )
-
         if (spans.isNotEmpty()) {
             spans.forEach {
                 editable.removeSpan(it)
@@ -2173,21 +1893,14 @@ class DoraTextEditor @JvmOverloads constructor(
      * 切换下标。
      */
     fun toggleSubscript() {
-        val range =
-            getSelectionRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getSelectionRange() ?: return
+        val editable = editor.text ?: return
         val spans =
             editable.getSpans(
                 range.first,
                 range.second,
                 SubscriptSpan::class.java
             )
-
         if (spans.isNotEmpty()) {
             spans.forEach {
                 editable.removeSpan(it)
@@ -2216,25 +1929,16 @@ class DoraTextEditor @JvmOverloads constructor(
      * 因此它属于文本内容的一部分，而不是独立 Drawable。
      */
     fun insertHorizontalRule() {
-        val position =
-            editor.selectionStart
-
+        val position = editor.selectionStart
         if (position < 0) {
             return
         }
-
-        val editable =
-            editor.text
-                ?: return
-
-        val text =
-            "\n────────────────────\n"
-
+        val editable = editor.text ?: return
+        val text = "\n────────────────────\n"
         editable.insert(
             position,
             text
         )
-
         editor.setSelection(
             (position + text.length)
                 .coerceAtMost(
@@ -2251,13 +1955,10 @@ class DoraTextEditor @JvmOverloads constructor(
      * 在当前光标位置插入一个空行。
      */
     fun insertParagraphBreak() {
-        val position =
-            editor.selectionStart
-
+        val position = editor.selectionStart
         if (position < 0) {
             return
         }
-
         editor.text?.insert(
             position,
             "\n"
@@ -2279,16 +1980,11 @@ class DoraTextEditor @JvmOverloads constructor(
     fun insertText(
         value: String
     ) {
-        val start =
-            editor.selectionStart
-
-        val end =
-            editor.selectionEnd
-
+        val start = editor.selectionStart
+        val end = editor.selectionEnd
         if (start < 0 || end < 0) {
             return
         }
-
         editor.text?.replace(
             minOf(start, end),
             maxOf(start, end),
@@ -2303,7 +1999,7 @@ class DoraTextEditor @JvmOverloads constructor(
     /**
      * 插入 Bitmap 图片。
      *
-     * 图片在文本中使用一个 Unicode Object Replacement Character：
+     * 图片在文本中使用 Unicode Object Replacement Character：
      *
      * `\uFFFC`
      *
@@ -2313,106 +2009,54 @@ class DoraTextEditor @JvmOverloads constructor(
      * 会按照原始宽高比例自动缩小。
      *
      * @param bitmap 要插入的 Bitmap。
-     * @param mimeType 图片 MIME 类型。
      */
-    fun insertImage(
-        bitmap: Bitmap,
-        mimeType: String
-    ) {
-        val start =
-            editor.selectionStart
-
-        val end =
-            editor.selectionEnd
-
+    fun insertImage(bitmap: Bitmap) {
+        val start = editor.selectionStart
+        val end = editor.selectionEnd
         if (start < 0 || end < 0) {
             return
         }
-
-        val drawable =
-            BitmapDrawable(
-                resources,
-                bitmap
-            )
-
+        val drawable = BitmapDrawable(
+            resources,
+            bitmap
+        )
         val maxWidth =
             editor.width -
                     editor.paddingLeft -
                     editor.paddingRight
-
-        var width =
-            bitmap.width
-
-        var height =
-            bitmap.height
-
-        if (
-            maxWidth > 0 &&
-            width > maxWidth
-        ) {
-            val scale =
-                maxWidth.toFloat() /
-                        width
-
-            width =
-                maxWidth
-
-            height =
-                (height * scale).toInt()
+        var width = bitmap.width
+        var height = bitmap.height
+        if (maxWidth in 1..<width) {
+            val scale = maxWidth.toFloat() / width
+            width = maxWidth
+            height = (height * scale).toInt()
         }
-
         drawable.setBounds(
             0,
             0,
             width,
             height
         )
-
-        val imageSpan =
-            ImageSpan(
-                drawable,
-                ImageSpan.ALIGN_BASELINE
-            )
-
-        val editable =
-            editor.text
-                ?: return
-
-        val imagePosition =
-            minOf(start, end)
-
+        val imageSpan = ImageSpan(
+            drawable,
+            ImageSpan.ALIGN_BASELINE
+        )
+        val editable = editor.text ?: return
+        val imagePosition = minOf(start, end)
         editable.replace(
             imagePosition,
             maxOf(start, end),
             "\uFFFC"
         )
-
         editable.setSpan(
             imageSpan,
             imagePosition,
             imagePosition + 1,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
-
         editor.setSelection(
             (imagePosition + 1)
-                .coerceAtMost(
-                    editor.length()
-                )
-        )
-    }
-
-    /**
-     * 插入默认 PNG 类型的 Bitmap。
-     *
-     * @param bitmap 要插入的图片。
-     */
-    fun insertImage(
-        bitmap: Bitmap
-    ) {
-        insertImage(
-            bitmap,
-            "image/png"
+                .coerceAtMost(editor.length())
         )
     }
 
@@ -2420,35 +2064,23 @@ class DoraTextEditor @JvmOverloads constructor(
      * 从 Uri 插入图片。
      *
      * @param uri 图片 Uri。
-     * @param mimeType 图片 MIME 类型。
-     * @throws Exception 无法读取或解析图片时抛出异常。
+     * @throws Exception 无法打开或解析图片时抛出异常。
      */
     @Throws(Exception::class)
-    fun insertImage(
-        uri: Uri,
-        mimeType: String? = null
-    ) {
+    fun insertImage(uri: Uri) {
         val inputStream =
             context.contentResolver
                 .openInputStream(uri)
                 ?: throw IllegalArgumentException(
                     "无法打开图片：$uri"
                 )
-
         inputStream.use {
             val bitmap =
                 BitmapFactory.decodeStream(it)
                     ?: throw IllegalArgumentException(
                         "无法解析图片：$uri"
                     )
-
-            insertImage(
-                bitmap,
-                mimeType
-                    ?: context.contentResolver
-                        .getType(uri)
-                    ?: "image/png"
-            )
+            insertImage(bitmap)
         }
     }
 
@@ -2456,13 +2088,11 @@ class DoraTextEditor @JvmOverloads constructor(
      * 从文件插入图片。
      *
      * @param file 图片文件。
-     * @param mimeType 图片 MIME 类型。
      * @throws Exception 图片不存在或无法解析时抛出异常。
      */
     @Throws(Exception::class)
     fun insertImage(
-        file: File,
-        mimeType: String = "image/png"
+        file: File
     ) {
         val bitmap =
             BitmapFactory.decodeFile(
@@ -2471,11 +2101,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 ?: throw IllegalArgumentException(
                     "无法解析图片：${file.absolutePath}"
                 )
-
-        insertImage(
-            bitmap,
-            mimeType
-        )
+        insertImage(bitmap)
     }
 
     // ============================================================
@@ -2486,19 +2112,14 @@ class DoraTextEditor @JvmOverloads constructor(
      * 切换拼写检查。
      */
     fun toggleSpellCheck() {
-        spellCheckEnabled =
-            !spellCheckEnabled
-
-        editor.inputType =
-            createInputType()
-
+        spellCheckEnabled = !spellCheckEnabled
+        editor.inputType = createInputType()
         val selection =
             editor.selectionStart
                 .coerceAtLeast(0)
                 .coerceAtMost(
                     editor.length()
                 )
-
         editor.setSelection(selection)
     }
 
@@ -2510,11 +2131,8 @@ class DoraTextEditor @JvmOverloads constructor(
     fun setSpellCheckEnabled(
         enabled: Boolean
     ) {
-        spellCheckEnabled =
-            enabled
-
-        editor.inputType =
-            createInputType()
+        spellCheckEnabled = enabled
+        editor.inputType = createInputType()
     }
 
     /**
@@ -2534,12 +2152,8 @@ class DoraTextEditor @JvmOverloads constructor(
      * 切换自动换行。
      */
     fun toggleWordWrap() {
-        wordWrapEnabled =
-            !wordWrapEnabled
-
-        editor.setHorizontallyScrolling(
-            !wordWrapEnabled
-        )
+        wordWrapEnabled = !wordWrapEnabled
+        editor.setHorizontallyScrolling(!wordWrapEnabled)
     }
 
     /**
@@ -2550,12 +2164,8 @@ class DoraTextEditor @JvmOverloads constructor(
     fun setWordWrapEnabled(
         enabled: Boolean
     ) {
-        wordWrapEnabled =
-            enabled
-
-        editor.setHorizontallyScrolling(
-            !enabled
-        )
+        wordWrapEnabled = enabled
+        editor.setHorizontallyScrolling(!enabled)
     }
 
     /**
@@ -2593,14 +2203,8 @@ class DoraTextEditor @JvmOverloads constructor(
      * 当前不会被这里清除。
      */
     fun clearSelectionFormatting() {
-        val range =
-            getSelectionRange()
-                ?: return
-
-        val editable =
-            editor.text
-                ?: return
-
+        val range = getSelectionRange() ?: return
+        val editable = editor.text ?: return
         editable.getSpans(
             range.first,
             range.second,
@@ -2647,17 +2251,13 @@ class DoraTextEditor @JvmOverloads constructor(
         val scrollView =
             HorizontalScrollView(context).apply {
                 isHorizontalScrollBarEnabled = false
-                overScrollMode =
-                    OVER_SCROLL_NEVER
+                overScrollMode = OVER_SCROLL_NEVER
                 setBackgroundColor(Color.WHITE)
             }
-
         val container =
             LinearLayout(context).apply {
                 orientation = HORIZONTAL
-                gravity =
-                    Gravity.CENTER_VERTICAL
-
+                gravity = Gravity.CENTER_VERTICAL
                 setPadding(
                     dp(6),
                     0,
@@ -2665,7 +2265,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     0
                 )
             }
-
         scrollView.addView(
             container,
             FrameLayout.LayoutParams(
@@ -2673,10 +2272,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 LayoutParams.MATCH_PARENT
             )
         )
-
-        val popupWidth =
-            toolbarScrollView.width
-
+        val popupWidth = toolbarScrollView.width
         val popup =
             PopupWindow(
                 scrollView,
@@ -2684,13 +2280,8 @@ class DoraTextEditor @JvmOverloads constructor(
                 toolbarHeight,
                 true
             ).apply {
-                setBackgroundDrawable(
-                    Color.WHITE.toDrawable()
-                )
-
-                elevation =
-                    dp(6).toFloat()
-
+                setBackgroundDrawable(Color.WHITE.toDrawable())
+                elevation = dp(6).toFloat()
                 isOutsideTouchable = true
                 isFocusable = true
             }
@@ -2700,15 +2291,9 @@ class DoraTextEditor @JvmOverloads constructor(
                 TextView(context).apply {
                     text = value
                     textSize = 14f
-                    gravity =
-                        Gravity.CENTER
-
-                    setTextColor(
-                        toolbarTextColor
-                    )
-
+                    gravity = Gravity.CENTER
+                    setTextColor(toolbarTextColor)
                     includeFontPadding = false
-
                     setPadding(
                         dp(12),
                         0,
@@ -2716,7 +2301,6 @@ class DoraTextEditor @JvmOverloads constructor(
                         0
                     )
                 }
-
             container.addView(
                 item,
                 LayoutParams(
@@ -2724,13 +2308,11 @@ class DoraTextEditor @JvmOverloads constructor(
                     LayoutParams.MATCH_PARENT
                 )
             )
-
             item.setOnClickListener {
                 callback(value)
                 popup.dismiss()
             }
         }
-
         popup.showAsDropDown(
             anchor,
             0,
@@ -2757,13 +2339,10 @@ class DoraTextEditor @JvmOverloads constructor(
                     OVER_SCROLL_NEVER
                 setBackgroundColor(Color.WHITE)
             }
-
         val container =
             LinearLayout(context).apply {
                 orientation = HORIZONTAL
-                gravity =
-                    Gravity.CENTER_VERTICAL
-
+                gravity = Gravity.CENTER_VERTICAL
                 setPadding(
                     dp(6),
                     dp(4),
@@ -2771,7 +2350,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     dp(4)
                 )
             }
-
         scrollView.addView(
             container,
             FrameLayout.LayoutParams(
@@ -2779,10 +2357,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 LayoutParams.MATCH_PARENT
             )
         )
-
-        val popupWidth =
-            toolbarScrollView.width
-
+        val popupWidth = toolbarScrollView.width
         val popup =
             PopupWindow(
                 scrollView,
@@ -2790,17 +2365,11 @@ class DoraTextEditor @JvmOverloads constructor(
                 toolbarHeight,
                 true
             ).apply {
-                setBackgroundDrawable(
-                    Color.WHITE.toDrawable()
-                )
-
-                elevation =
-                    dp(6).toFloat()
-
+                setBackgroundDrawable(Color.WHITE.toDrawable())
+                elevation = dp(6).toFloat()
                 isOutsideTouchable = true
                 isFocusable = true
             }
-
         items.forEach { item ->
             val view =
                 View(context).apply {
@@ -2808,9 +2377,7 @@ class DoraTextEditor @JvmOverloads constructor(
                         item.color
                     )
                 }
-
             item.view = view
-
             container.addView(
                 view,
                 LayoutParams(
@@ -2821,13 +2388,11 @@ class DoraTextEditor @JvmOverloads constructor(
                     marginEnd = dp(5)
                 }
             )
-
             view.setOnClickListener {
                 callback(item)
                 popup.dismiss()
             }
         }
-
         popup.showAsDropDown(
             anchor,
             0,
@@ -2846,26 +2411,16 @@ class DoraTextEditor @JvmOverloads constructor(
      *         没有有效选择时返回 null。
      */
     private fun getSelectionRange(): Pair<Int, Int>? {
-        val start =
-            editor.selectionStart
-
-        val end =
-            editor.selectionEnd
-
+        val start = editor.selectionStart
+        val end = editor.selectionEnd
         if (start < 0 || end < 0) {
             return null
         }
-
-        val s =
-            minOf(start, end)
-
-        val e =
-            maxOf(start, end)
-
+        val s = minOf(start, end)
+        val e = maxOf(start, end)
         if (s == e) {
             return null
         }
-
         return s to e
     }
 
@@ -2878,45 +2433,33 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     private fun getCurrentParagraphRange():
             Pair<Int, Int>? {
-        val editable =
-            editor.text
-                ?: return null
-
+        val editable = editor.text ?: return null
         if (editable.isEmpty()) {
             return null
         }
-
         val position =
             editor.selectionStart
                 .coerceAtLeast(0)
                 .coerceAtMost(
                     editable.length
                 )
-
-        var start =
-            position
-
+        var start = position
         while (
             start > 0 &&
             editable[start - 1] != '\n'
         ) {
             start--
         }
-
-        var end =
-            position
-
+        var end = position
         while (
             end < editable.length &&
             editable[end] != '\n'
         ) {
             end++
         }
-
         if (start == end) {
             return null
         }
-
         return start to end
     }
 
@@ -2935,30 +2478,22 @@ class DoraTextEditor @JvmOverloads constructor(
      * - 删除线
      */
     private fun updateCurrentStyleFromSelection() {
-        val editable =
-            editor.text
-                ?: return
-
-        val position =
-            editor.selectionStart
-
+        val editable = editor.text ?: return
+        val position = editor.selectionStart
         if (
             position < 0 ||
             position >= editable.length
         ) {
             return
         }
-
         val styleSpans =
             editable.getSpans(
                 position,
                 position + 1,
                 StyleSpan::class.java
             )
-
         currentBold = false
         currentItalic = false
-
         styleSpans.forEach {
             if (
                 it.style == Typeface.BOLD ||
@@ -2966,7 +2501,6 @@ class DoraTextEditor @JvmOverloads constructor(
             ) {
                 currentBold = true
             }
-
             if (
                 it.style == Typeface.ITALIC ||
                 it.style == Typeface.BOLD_ITALIC
@@ -2974,14 +2508,12 @@ class DoraTextEditor @JvmOverloads constructor(
                 currentItalic = true
             }
         }
-
         currentUnderline =
             editable.getSpans(
                 position,
                 position + 1,
                 UnderlineSpan::class.java
             ).isNotEmpty()
-
         currentStrikeThrough =
             editable.getSpans(
                 position,
@@ -3001,14 +2533,9 @@ class DoraTextEditor @JvmOverloads constructor(
      * @throws Exception 文件写入失败时抛出异常。
      */
     @Throws(Exception::class)
-    fun saveDtxt(
-        file: File
-    ) {
-        val root =
-            buildDtxtJson()
-
+    fun saveDtxt(file: File) {
+        val root = buildDtxtJson()
         file.parentFile?.mkdirs()
-
         file.writeText(
             root.toString(),
             StandardCharsets.UTF_8
@@ -3038,129 +2565,98 @@ class DoraTextEditor @JvmOverloads constructor(
      * - images
      */
     private fun buildDtxtJson(): JSONObject {
-        val editable =
-            editor.text
-                ?: SpannableStringBuilder()
-
-        val root =
-            JSONObject()
-
+        val editable = editor.text ?: SpannableStringBuilder()
+        val root = JSONObject()
         root.put(
             "format",
             DTXT_FORMAT
         )
-
         root.put(
             "version",
             DTXT_VERSION
         )
-
         root.put(
             "text",
             editable.toString()
         )
-
         root.put(
             "justify",
             justifyEnabled
         )
-
-        val spans =
-            JSONArray()
-
+        val spans = JSONArray()
         saveStyleSpans(
             editable,
             spans
         )
-
         saveColorSpans(
             editable,
             spans
         )
-
         saveSizeSpans(
             editable,
             spans
         )
-
         saveUnderlineSpans(
             editable,
             spans
         )
-
         saveStrikeSpans(
             editable,
             spans
         )
-
         saveSuperSubSpans(
             editable,
             spans
         )
-
         saveBulletSpans(
             editable,
             spans
         )
-
         saveOrderedSpans(
             editable,
             spans
         )
-
         saveTaskSpans(
             editable,
             spans
         )
-
         saveCheckSpans(
             editable,
             spans
         )
-
         saveStarSpans(
             editable,
             spans
         )
-
         saveQuoteSpans(
             editable,
             spans
         )
-
         saveCodeSpans(
             editable,
             spans
         )
-
         saveAlignmentSpans(
             editable,
             spans
         )
-
         saveIndentSpans(
             editable,
             spans
         )
-
         root.put(
             "spans",
             spans
         )
-
-        val images =
-            JSONArray()
-
+        val images = JSONArray()
         saveImageSpans(
             editable,
             images
         )
-
         root.put(
             "images",
             images
         )
-
         return root
     }
 
@@ -3184,7 +2680,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 0,
                 builder.length
             )
-
         val end =
             item.optInt(
                 "end",
@@ -3193,61 +2688,46 @@ class DoraTextEditor @JvmOverloads constructor(
                 0,
                 builder.length
             )
-
         if (start >= end) {
             return
         }
-
         val data =
             item.optString(
                 "data",
                 ""
             )
-
         if (data.isEmpty()) {
             return
         }
-
         try {
             val bytes =
                 Base64.decode(
                     data,
                     Base64.NO_WRAP
                 )
-
             val bitmap =
                 BitmapFactory.decodeByteArray(
                     bytes,
                     0,
                     bytes.size
-                )
-                    ?: return
-
-            val drawable =
-                BitmapDrawable(
-                    resources,
-                    bitmap
-                )
-
+                ) ?: return
+            val drawable = BitmapDrawable(resources, bitmap)
             val width =
                 item.optInt(
                     "width",
                     bitmap.width
                 )
-
             val height =
                 item.optInt(
                     "height",
                     bitmap.height
                 )
-
             drawable.setBounds(
                 0,
                 0,
                 width,
                 height
             )
-
             builder.setSpan(
                 ImageSpan(
                     drawable,
@@ -3281,32 +2761,22 @@ class DoraTextEditor @JvmOverloads constructor(
             editable.length,
             StyleSpan::class.java
         ).forEach { span ->
-
-            val start =
-                editable.getSpanStart(span)
-
-            val end =
-                editable.getSpanEnd(span)
-
+            val start = editable.getSpanStart(span)
+            val end = editable.getSpanEnd(span)
             if (start >= end) {
                 return@forEach
             }
-
             val type =
                 when (span.style) {
                     Typeface.BOLD ->
                         "bold"
-
                     Typeface.ITALIC ->
                         "italic"
-
                     Typeface.BOLD_ITALIC ->
                         "bold_italic"
-
                     else ->
                         return@forEach
                 }
-
             spans.put(
                 JSONObject()
                     .put("type", type)
@@ -3328,7 +2798,6 @@ class DoraTextEditor @JvmOverloads constructor(
             editable.length,
             ForegroundColorSpan::class.java
         ).forEach { span ->
-
             saveRange(
                 editable,
                 span,
@@ -3353,7 +2822,6 @@ class DoraTextEditor @JvmOverloads constructor(
             editable.length,
             AbsoluteSizeSpan::class.java
         ).forEach { span ->
-
             saveRange(
                 editable,
                 span,
@@ -3578,7 +3046,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 spans
             )
         }
-
         editable.getSpans(
             0,
             editable.length,
@@ -3615,7 +3082,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 spans
             )
         }
-
         editable.getSpans(
             0,
             editable.length,
@@ -3646,14 +3112,11 @@ class DoraTextEditor @JvmOverloads constructor(
                 when (it.alignment) {
                     Layout.Alignment.ALIGN_CENTER ->
                         "center"
-
                     Layout.Alignment.ALIGN_OPPOSITE ->
                         "right"
-
                     else ->
                         "left"
                 }
-
             saveRange(
                 editable,
                 it,
@@ -3709,31 +3172,14 @@ class DoraTextEditor @JvmOverloads constructor(
             editable.length,
             ImageSpan::class.java
         ).forEach { span ->
-
-            val start =
-                editable.getSpanStart(span)
-
-            val end =
-                editable.getSpanEnd(span)
-
+            val start = editable.getSpanStart(span)
+            val end = editable.getSpanEnd(span)
             if (start !in 0..<end) {
                 return@forEach
             }
-
-            val drawable =
-                span.drawable
-
-            val bitmap =
-                drawableToBitmap(
-                    drawable
-                )
-                    ?: return@forEach
-
-            val data =
-                bitmapToBase64(
-                    bitmap
-                )
-
+            val drawable = span.drawable
+            val bitmap = drawableToBitmap(drawable) ?: return@forEach
+            val data = bitmapToBase64(bitmap)
             val item =
                 JSONObject()
                     .put(
@@ -3764,7 +3210,6 @@ class DoraTextEditor @JvmOverloads constructor(
                         "data",
                         data
                     )
-
             images.put(item)
         }
     }
@@ -3782,38 +3227,26 @@ class DoraTextEditor @JvmOverloads constructor(
      * @param drawable 原始 Drawable。
      * @return Bitmap，无法转换时返回 null。
      */
-    private fun drawableToBitmap(
-        drawable: Drawable
-    ): Bitmap? {
-        val width =
-            drawable.intrinsicWidth
-
-        val height =
-            drawable.intrinsicHeight
-
+    private fun drawableToBitmap(drawable: Drawable): Bitmap? {
+        val width = drawable.intrinsicWidth
+        val height = drawable.intrinsicHeight
         if (width <= 0 || height <= 0) {
             return null
         }
-
         val bitmap =
             Bitmap.createBitmap(
                 width,
                 height,
                 Bitmap.Config.ARGB_8888
             )
-
-        val canvas =
-            Canvas(bitmap)
-
+        val canvas = Canvas(bitmap)
         drawable.setBounds(
             0,
             0,
             width,
             height
         )
-
         drawable.draw(canvas)
-
         return bitmap
     }
 
@@ -3826,15 +3259,12 @@ class DoraTextEditor @JvmOverloads constructor(
     private fun bitmapToBase64(
         bitmap: Bitmap
     ): String {
-        val output =
-            ByteArrayOutputStream()
-
+        val output = ByteArrayOutputStream()
         bitmap.compress(
             Bitmap.CompressFormat.PNG,
             100,
             output
         )
-
         return Base64.encodeToString(
             output.toByteArray(),
             Base64.NO_WRAP
@@ -3856,16 +3286,11 @@ class DoraTextEditor @JvmOverloads constructor(
         type: String,
         spans: JSONArray
     ): JSONObject? {
-        val start =
-            editable.getSpanStart(span)
-
-        val end =
-            editable.getSpanEnd(span)
-
+        val start = editable.getSpanStart(span)
+        val end = editable.getSpanEnd(span)
         if (start !in 0..<end) {
             return null
         }
-
         val item =
             JSONObject()
                 .put(
@@ -3880,9 +3305,7 @@ class DoraTextEditor @JvmOverloads constructor(
                     "end",
                     end
                 )
-
         spans.put(item)
-
         return item
     }
 
@@ -3897,15 +3320,12 @@ class DoraTextEditor @JvmOverloads constructor(
      * @throws Exception 文件不存在、格式错误或读取失败时抛出异常。
      */
     @Throws(Exception::class)
-    fun loadDtxt(
-        file: File
-    ) {
+    fun loadDtxt(file: File) {
         if (!file.exists()) {
             throw IllegalArgumentException(
                 "DTXT 文件不存在：${file.absolutePath}"
             )
         }
-
         loadDtxtContent(
             file.readText(
                 StandardCharsets.UTF_8
@@ -3920,102 +3340,58 @@ class DoraTextEditor @JvmOverloads constructor(
      * @throws Exception JSON 格式错误或版本不支持时抛出异常。
      */
     @Throws(Exception::class)
-    fun loadDtxtContent(
-        json: String
-    ) {
-        val root =
-            JSONObject(json)
-
-        if (
-            root.optString("format") !=
-            DTXT_FORMAT
-        ) {
+    fun loadDtxtContent(json: String) {
+        val root = JSONObject(json)
+        if (root.optString("format") != DTXT_FORMAT) {
             throw IllegalArgumentException(
                 "不是有效的 DTXT 文件"
             )
         }
-
         val version =
             root.optInt(
                 "version",
                 1
             )
-
-        if (
-            version !in 1..DTXT_VERSION
-        ) {
+        if (version !in 1..DTXT_VERSION) {
             throw IllegalArgumentException(
                 "不支持的 DTXT 版本：$version"
             )
         }
-
         val text =
             root.optString(
                 "text",
                 ""
             )
-
         justifyEnabled =
             root.optBoolean(
                 "justify",
                 false
             )
-
-        val builder =
-            SpannableStringBuilder(text)
-
-        val spans =
-            root.optJSONArray(
-                "spans"
-            )
-                ?: JSONArray()
-
-        for (
-        i in 0 until spans.length()
-        ) {
-            val item =
-                spans.optJSONObject(i)
-                    ?: continue
-
+        val builder = SpannableStringBuilder(text)
+        val spans = root.optJSONArray("spans") ?: JSONArray()
+        for (i in 0 until spans.length()) {
+            val item = spans.optJSONObject(i) ?: continue
             applyDtxtSpan(
                 builder,
                 item
             )
         }
-
-        val images =
-            root.optJSONArray(
-                "images"
-            )
-                ?: JSONArray()
-
-        for (
-        i in 0 until images.length()
-        ) {
-            val item =
-                images.optJSONObject(i)
-                    ?: continue
-
+        val images = root.optJSONArray("images") ?: JSONArray()
+        for (i in 0 until images.length()) {
+            val item = images.optJSONObject(i) ?: continue
             applyDtxtImage(
                 builder,
                 item
             )
         }
-
         suppressTextWatcher = true
-
         try {
             editor.setText(builder)
-
-            editor.setSelection(
-                builder.length
-            )
-
+            editor.setSelection(builder.length)
             applyJustifyMode()
         } finally {
             suppressTextWatcher = false
         }
-
         updateCurrentStyleFromSelection()
     }
 
@@ -4029,9 +3405,7 @@ class DoraTextEditor @JvmOverloads constructor(
         builder: SpannableStringBuilder,
         item: JSONObject
     ) {
-        val type =
-            item.optString("type")
-
+        val type = item.optString("type")
         val start =
             item.optInt(
                 "start",
@@ -4040,7 +3414,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 0,
                 builder.length
             )
-
         val end =
             item.optInt(
                 "end",
@@ -4049,13 +3422,10 @@ class DoraTextEditor @JvmOverloads constructor(
                 0,
                 builder.length
             )
-
         if (start >= end) {
             return
         }
-
         when (type) {
-
             "bold" ->
                 builder.setSpan(
                     StyleSpan(
@@ -4065,7 +3435,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "italic" ->
                 builder.setSpan(
                     StyleSpan(
@@ -4075,7 +3444,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "bold_italic" ->
                 builder.setSpan(
                     StyleSpan(
@@ -4085,7 +3453,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "color" ->
                 builder.setSpan(
                     ForegroundColorSpan(
@@ -4098,7 +3465,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "size" ->
                 builder.setSpan(
                     AbsoluteSizeSpan(
@@ -4115,7 +3481,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "underline" ->
                 builder.setSpan(
                     UnderlineSpan(),
@@ -4123,7 +3488,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "strike" ->
                 builder.setSpan(
                     StrikethroughSpan(),
@@ -4131,7 +3495,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "superscript" ->
                 builder.setSpan(
                     SuperscriptSpan(),
@@ -4139,7 +3502,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "subscript" ->
                 builder.setSpan(
                     SubscriptSpan(),
@@ -4147,7 +3509,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "bullet" ->
                 builder.setSpan(
                     BulletSpan(
@@ -4158,7 +3519,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "ordered" ->
                 builder.setSpan(
                     OrderedListSpan(
@@ -4171,7 +3531,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "task" ->
                 builder.setSpan(
                     TaskListSpan(
@@ -4184,7 +3543,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "check" ->
                 builder.setSpan(
                     CheckListSpan(
@@ -4197,7 +3555,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "star" ->
                 builder.setSpan(
                     StarListSpan(),
@@ -4205,7 +3562,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "quote" ->
                 builder.setSpan(
                     QuoteSpan(),
@@ -4213,7 +3569,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "blockquote" ->
                 builder.setSpan(
                     BlockQuoteSpan(
@@ -4226,7 +3581,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "code" ->
                 builder.setSpan(
                     CodeSpan(),
@@ -4234,7 +3588,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "code_block" ->
                 builder.setSpan(
                     CodeBlockSpan(),
@@ -4242,24 +3595,16 @@ class DoraTextEditor @JvmOverloads constructor(
                     end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-
             "alignment" -> {
                 val alignment =
-                    when (
-                        item.optString(
-                            "value"
-                        )
-                    ) {
+                    when (item.optString("value")) {
                         "center" ->
                             Layout.Alignment.ALIGN_CENTER
-
                         "right" ->
                             Layout.Alignment.ALIGN_OPPOSITE
-
                         else ->
                             Layout.Alignment.ALIGN_NORMAL
                     }
-
                 builder.setSpan(
                     AlignmentSpan.Standard(
                         alignment
@@ -4269,7 +3614,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
-
             "indent" -> {
                 builder.setSpan(
                     DoraIndentSpan(
@@ -4299,9 +3643,7 @@ class DoraTextEditor @JvmOverloads constructor(
      *
      * @param value 新内容。
      */
-    fun setContent(
-        value: CharSequence?
-    ) {
+    fun setContent(value: CharSequence?) {
         editor.setText(value)
     }
 
@@ -4331,8 +3673,7 @@ class DoraTextEditor @JvmOverloads constructor(
      * @return 纯文本字符串。
      */
     fun getPlainText(): String {
-        return editor.text?.toString()
-            ?: ""
+        return editor.text?.toString() ?: ""
     }
 
     /**
@@ -4340,9 +3681,7 @@ class DoraTextEditor @JvmOverloads constructor(
      *
      * @param value Hint 文本。
      */
-    fun setHintText(
-        value: String
-    ) {
+    fun setHintText(value: String) {
         hintText = value
         editor.hint = value
     }
@@ -4352,9 +3691,7 @@ class DoraTextEditor @JvmOverloads constructor(
      *
      * @param color ARGB 颜色。
      */
-    fun setEditorTextColor(
-        @ColorInt color: Int
-    ) {
+    fun setEditorTextColor(@ColorInt color: Int) {
         editorTextColor = color
         editor.setTextColor(color)
     }
@@ -4364,9 +3701,7 @@ class DoraTextEditor @JvmOverloads constructor(
      *
      * @param size 字号，单位 sp。
      */
-    fun setEditorTextSize(
-        size: Float
-    ) {
+    fun setEditorTextSize(size: Float) {
         editorTextSize = size
         editor.textSize = size
     }
@@ -4382,16 +3717,9 @@ class DoraTextEditor @JvmOverloads constructor(
         @ColorInt color: Int
     ) {
         toolbarTextColor = color
-
-        for (
-        i in 0 until toolbar.childCount
-        ) {
-            val child =
-                toolbar.getChildAt(i)
-
-            if (
-                child is ImageButton
-            ) {
+        for (i in 0 until toolbar.childCount) {
+            val child = toolbar.getChildAt(i)
+            if (child is ImageButton) {
                 child.imageTintList =
                     ColorStateList.valueOf(
                         color
@@ -4409,15 +3737,9 @@ class DoraTextEditor @JvmOverloads constructor(
         @ColorInt color: Int
     ) {
         toolbarColor = color
-
-        toolbarContainer
-            .setBackgroundColor(color)
-
-        toolbarScrollView
-            .setBackgroundColor(color)
-
-        toolbar
-            .setBackgroundColor(color)
+        toolbarContainer.setBackgroundColor(color)
+        toolbarScrollView.setBackgroundColor(color)
+        toolbar.setBackgroundColor(color)
     }
 
     /**
@@ -4439,7 +3761,6 @@ class DoraTextEditor @JvmOverloads constructor(
         visible: Boolean
     ) {
         toolbarVisible = visible
-
         toolbarContainer.visibility =
             if (visible) {
                 VISIBLE
@@ -4465,17 +3786,10 @@ class DoraTextEditor @JvmOverloads constructor(
     fun setToolbarHeight(
         heightDp: Int
     ) {
-        toolbarHeight =
-            dp(heightDp)
-
-        val params =
-            toolbarScrollView.layoutParams
-
-        params.height =
-            toolbarHeight
-
-        toolbarScrollView.layoutParams =
-            params
+        toolbarHeight = dp(heightDp)
+        val params = toolbarScrollView.layoutParams
+        params.height = toolbarHeight
+        toolbarScrollView.layoutParams = params
     }
 
     /**
@@ -4484,10 +3798,7 @@ class DoraTextEditor @JvmOverloads constructor(
      * @return 高度，单位 dp。
      */
     fun getToolbarHeight(): Int {
-        return (
-                toolbarHeight /
-                        resources.displayMetrics.density
-                ).toInt()
+        return (toolbarHeight / resources.displayMetrics.density).toInt()
     }
 
     /**
@@ -4499,9 +3810,7 @@ class DoraTextEditor @JvmOverloads constructor(
         @ColorInt color: Int
     ) {
         dividerColor = color
-
-        toolbarDivider
-            .setBackgroundColor(color)
+        toolbarDivider.setBackgroundColor(color)
     }
 
     /**
@@ -4543,13 +3852,11 @@ class DoraTextEditor @JvmOverloads constructor(
                 0,
                 editor.length()
             )
-
         val safeEnd =
             end.coerceIn(
                 0,
                 editor.length()
             )
-
         editor.setSelection(
             safeStart,
             safeEnd
@@ -4563,9 +3870,7 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     fun clear() {
         editor.text?.clear()
-
         justifyEnabled = false
-
         applyJustifyMode()
     }
 
@@ -4619,7 +3924,6 @@ class DoraTextEditor @JvmOverloads constructor(
             if (!first) {
                 return
             }
-
             c.drawText(
                 "$number.",
                 x.toFloat(),
@@ -4709,18 +4013,10 @@ class DoraTextEditor @JvmOverloads constructor(
             if (!first) {
                 return
             }
-
-            val oldStyle =
-                p.style
-
-            val oldStroke =
-                p.strokeWidth
-
-            p.style =
-                Paint.Style.STROKE
-
+            val oldStyle = p.style
+            val oldStroke = p.strokeWidth
+            p.style = Paint.Style.STROKE
             p.strokeWidth = 2f
-
             c.drawRect(
                 x.toFloat(),
                 baseline - 18f,
@@ -4728,11 +4024,8 @@ class DoraTextEditor @JvmOverloads constructor(
                 baseline + 2f,
                 p
             )
-
             if (checked) {
-                p.style =
-                    Paint.Style.FILL
-
+                p.style = Paint.Style.FILL
                 c.drawRect(
                     x.toFloat(),
                     baseline - 18f,
@@ -4741,12 +4034,8 @@ class DoraTextEditor @JvmOverloads constructor(
                     p
                 )
             }
-
-            p.style =
-                oldStyle
-
-            p.strokeWidth =
-                oldStroke
+            p.style = oldStyle
+            p.strokeWidth = oldStroke
         }
     }
 
@@ -4790,18 +4079,10 @@ class DoraTextEditor @JvmOverloads constructor(
             if (!first) {
                 return
             }
-
-            val oldStyle =
-                p.style
-
-            val oldStroke =
-                p.strokeWidth
-
-            p.style =
-                Paint.Style.STROKE
-
+            val oldStyle = p.style
+            val oldStroke = p.strokeWidth
+            p.style = Paint.Style.STROKE
             p.strokeWidth = 2f
-
             c.drawRect(
                 x.toFloat(),
                 baseline - 18f,
@@ -4809,7 +4090,6 @@ class DoraTextEditor @JvmOverloads constructor(
                 baseline + 2f,
                 p
             )
-
             if (checked) {
                 c.drawLine(
                     x + 3f,
@@ -4818,7 +4098,6 @@ class DoraTextEditor @JvmOverloads constructor(
                     baseline - 3f,
                     p
                 )
-
                 c.drawLine(
                     x + 8f,
                     baseline - 3f,
@@ -4827,12 +4106,8 @@ class DoraTextEditor @JvmOverloads constructor(
                     p
                 )
             }
-
-            p.style =
-                oldStyle
-
-            p.strokeWidth =
-                oldStroke
+            p.style = oldStyle
+            p.strokeWidth = oldStroke
         }
     }
 
@@ -4873,7 +4148,6 @@ class DoraTextEditor @JvmOverloads constructor(
             if (!first) {
                 return
             }
-
             c.drawText(
                 "★",
                 x.toFloat(),
@@ -4920,7 +4194,6 @@ class DoraTextEditor @JvmOverloads constructor(
             if (!first) {
                 return
             }
-
             c.drawText(
                 "“",
                 x.toFloat(),
@@ -4977,13 +4250,8 @@ class DoraTextEditor @JvmOverloads constructor(
             if (right) {
                 return
             }
-
-            val oldColor =
-                p.color
-
-            p.color =
-                DEFAULT_QUOTE_COLOR
-
+            val oldColor = p.color
+            p.color = DEFAULT_QUOTE_COLOR
             c.drawRect(
                 x.toFloat(),
                 top.toFloat(),
@@ -4991,9 +4259,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 bottom.toFloat(),
                 p
             )
-
-            p.color =
-                oldColor
+            p.color = oldColor
         }
 
         /**
@@ -5015,13 +4281,8 @@ class DoraTextEditor @JvmOverloads constructor(
             if (!right) {
                 return
             }
-
-            val oldColor =
-                p.color
-
-            p.color =
-                DEFAULT_QUOTE_COLOR
-
+            val oldColor = p.color
+            p.color = DEFAULT_QUOTE_COLOR
             c.drawRect(
                 (rightEdge - 6).toFloat(),
                 top.toFloat(),
@@ -5029,9 +4290,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 bottom.toFloat(),
                 p
             )
-
-            p.color =
-                oldColor
+            p.color = oldColor
         }
     }
 
@@ -5111,13 +4370,8 @@ class DoraTextEditor @JvmOverloads constructor(
             if (!first) {
                 return
             }
-
-            val oldColor =
-                p.color
-
-            p.color =
-                DEFAULT_CODE_BACKGROUND
-
+            val oldColor = p.color
+            p.color = DEFAULT_CODE_BACKGROUND
             c.drawRect(
                 x.toFloat(),
                 top.toFloat(),
@@ -5125,9 +4379,7 @@ class DoraTextEditor @JvmOverloads constructor(
                 bottom.toFloat(),
                 p
             )
-
-            p.color =
-                oldColor
+            p.color = oldColor
         }
     }
 
@@ -5144,11 +4396,7 @@ class DoraTextEditor @JvmOverloads constructor(
     private fun dp(
         value: Int
     ): Int {
-        return (
-                value *
-                        resources.displayMetrics.density +
-                        0.5f
-                ).toInt()
+        return (value * resources.displayMetrics.density + 0.5f).toInt()
     }
 
     /**
@@ -5160,7 +4408,6 @@ class DoraTextEditor @JvmOverloads constructor(
     private fun spToPx(
         value: Float
     ): Float {
-        return value *
-                resources.displayMetrics.scaledDensity
+        return value * resources.displayMetrics.scaledDensity
     }
 }
