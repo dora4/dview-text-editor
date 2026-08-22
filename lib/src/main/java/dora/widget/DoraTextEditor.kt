@@ -165,6 +165,11 @@ class DoraTextEditor @JvmOverloads constructor(
         private const val DEFAULT_DIVIDER_COLOR = 0xFFE5E5E5.toInt()
 
         /**
+         * 编辑区默认高度。
+         */
+        private const val DEFAULT_EDITOR_HEIGHT = 200
+
+        /**
          * Code Block 默认背景色。
          */
         private const val DEFAULT_CODE_BACKGROUND = 0xFFF5F5F5.toInt()
@@ -354,6 +359,11 @@ class DoraTextEditor @JvmOverloads constructor(
      */
     private var onImageClickListener: (() -> Unit)? = null
 
+    /**
+     * 编辑区高度。
+     */
+    private var editorHeight = 0
+
     // ============================================================
     // Init
     // ============================================================
@@ -418,8 +428,16 @@ class DoraTextEditor @JvmOverloads constructor(
         val editorParams =
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
-                0,
-                1f
+                if (layoutParams?.height == LayoutParams.WRAP_CONTENT) {
+                    dp(DEFAULT_EDITOR_HEIGHT)
+                } else {
+                    0
+                },
+                if (layoutParams?.height == LayoutParams.WRAP_CONTENT) {
+                    0f
+                } else {
+                    1f
+                }
             )
         if (toolbarPosition == TOOLBAR_POSITION_BOTTOM) {
             addView(
@@ -446,6 +464,45 @@ class DoraTextEditor @JvmOverloads constructor(
             } else {
                 GONE
             }
+    }
+
+    override fun onMeasure(
+        widthMeasureSpec: Int,
+        heightMeasureSpec: Int
+    ) {
+        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+        when (heightMode) {
+            MeasureSpec.EXACTLY -> {
+                // 父布局要求的高度优先级最高
+                setMeasuredDimension(
+                    MeasureSpec.getSize(widthMeasureSpec),
+                    heightSize
+                )
+            }
+            MeasureSpec.AT_MOST -> {
+                val desiredHeight = if (editorHeight > 0) {
+                    editorHeight
+                } else {
+                    suggestedMinimumHeight
+                }
+                setMeasuredDimension(
+                    MeasureSpec.getSize(widthMeasureSpec),
+                    desiredHeight.coerceAtMost(heightSize)
+                )
+            }
+            MeasureSpec.UNSPECIFIED -> {
+                val desiredHeight = if (editorHeight > 0) {
+                    editorHeight
+                } else {
+                    suggestedMinimumHeight
+                }
+                setMeasuredDimension(
+                    MeasureSpec.getSize(widthMeasureSpec),
+                    desiredHeight
+                )
+            }
+        }
     }
 
     // ============================================================
@@ -914,6 +971,7 @@ class DoraTextEditor @JvmOverloads constructor(
         editor.textSize = editorTextSize
         editor.hint = hintText
         editor.gravity = Gravity.TOP or Gravity.START
+        editor.minimumHeight = dp(200)
         editor.setPadding(
             dp(16),
             dp(12),
