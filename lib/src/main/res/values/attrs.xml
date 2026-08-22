@@ -11,6 +11,11 @@
 
         <attr name="dview_te_toolbarColor" format="color|reference" />
 
+        <attr name="dview_te_toolbarPosition" format="enum">
+            <enum name="top" value="0" />
+            <enum name="bottom" value="1" />
+        </attr>
+
         <!-- Editor -->
         <attr name="dview_te_textColor" format="color|reference" />
 
@@ -30,6 +35,7 @@
 
         <attr name="dview_te_justify" format="boolean" />
 
+        <attr name="dview_te_insertImageEnabled" format="boolean" />
     </declare-styleable>
 
 </resources>

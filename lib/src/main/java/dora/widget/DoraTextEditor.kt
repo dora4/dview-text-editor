@@ -213,6 +213,11 @@ class DoraTextEditor @JvmOverloads constructor(
     private val toolbarDivider = View(context)
 
     /**
+     * Toolbar显示在顶部还是底部，默认0-顶部。
+     */
+    private var toolbarPosition = 0
+
+    /**
      * 实际执行文本编辑的 EditText。
      */
     private val editor = AppCompatEditText(context)
@@ -330,6 +335,11 @@ class DoraTextEditor @JvmOverloads constructor(
     private var suppressTextWatcher = false
 
     /**
+     * 是否支持插入图片，如果为true，需要设置onImageClickListener。
+     */
+    var insertImageEnabled: Boolean = false
+
+    /**
      * 图片按钮点击回调。
      *
      * 由外部负责真正的图片选择逻辑，
@@ -382,22 +392,40 @@ class DoraTextEditor @JvmOverloads constructor(
             )
         )
 
-        addView(
-            toolbarContainer,
+        val toolbarParams =
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.WRAP_CONTENT
             )
-        )
 
-        addView(
-            editor,
+        val editorParams =
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
                 0,
                 1f
             )
-        )
+
+        if (toolbarPosition == 1) {
+            addView(
+                editor,
+                editorParams
+            )
+
+            addView(
+                toolbarContainer,
+                toolbarParams
+            )
+        } else {
+            addView(
+                toolbarContainer,
+                toolbarParams
+            )
+
+            addView(
+                editor,
+                editorParams
+            )
+        }
 
         toolbarContainer.visibility =
             if (toolbarVisible) {
@@ -431,6 +459,13 @@ class DoraTextEditor @JvmOverloads constructor(
 
         try {
             /**
+             * 是否支持插入图片。
+             */
+            insertImageEnabled = typedArray.getBoolean(
+                R.styleable.DoraTextEditor_dview_te_insertImageEnabled,
+                true
+            )
+            /**
              * 是否显示 Toolbar。
              */
             toolbarVisible =
@@ -455,6 +490,15 @@ class DoraTextEditor @JvmOverloads constructor(
                 typedArray.getColor(
                     R.styleable.DoraTextEditor_dview_te_toolbarColor,
                     DEFAULT_TOOLBAR_COLOR
+                )
+
+            /**
+             * Toolbar 位置。
+             */
+            toolbarPosition =
+                typedArray.getInt(
+                    R.styleable.DoraTextEditor_dview_te_toolbarPosition,
+                    0
                 )
 
             /**
@@ -628,12 +672,13 @@ class DoraTextEditor @JvmOverloads constructor(
         // ========================================================
         // 图片 / 字体 / 颜色
         // ========================================================
-
-        addIconButton(
-            R.drawable.ic_dview_editor_image,
-            "图片"
-        ) {
-            showImagePicker()
+        if (insertImageEnabled) {
+            addIconButton(
+                R.drawable.ic_dview_editor_image,
+                "图片"
+            ) {
+                showImagePicker()
+            }
         }
 
         addIconButton(
